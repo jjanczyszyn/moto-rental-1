@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Common";
+import { ExpiryField } from "../components/ExpiryField";
 import { IconCheck, IconUpload, IconRefresh } from "../components/Icons";
 
 type Phase = "idle" | "scanning" | "manual" | "done";
@@ -170,7 +171,7 @@ export function OCRScreen({
             <Field label="First name" value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
             <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
             <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
-            <Field label="Expiry date (YYYY-MM-DD)" value={state.docExpiry} onChange={(v) => set({ docExpiry: v })} mono />
+            <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
             <Field label="Country" value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
           </div>
         )}
@@ -183,7 +184,7 @@ export function OCRScreen({
             <Field label="First name" value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
             <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
             <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
-            <Field label="Expiry date" value={state.docExpiry} onChange={(v) => set({ docExpiry: v })} mono />
+            <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
             <Field label="Country" value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
             <button
               onClick={() => {
