@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { ReservationDraft, SignatureDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, ContractRow, daysBetween } from "../components/Common";
 import { BikeRow } from "../components/BikeIllustration";
+import { computeTotal } from "../lib/pricing";
 
 function tabStyle(active: boolean): React.CSSProperties {
   return {
@@ -139,6 +140,13 @@ export function ContractScreen({
   const nights = daysBetween(state.startDate, state.endDate);
   const phoneCC = state.phoneCC || "+505";
   const payMethod = config?.paymentMethods.find((p) => p.id === state.payMethod)?.label ?? "—";
+  const rates = {
+    daily: config?.dailyRate ?? 20,
+    weekly: config?.weeklyRate ?? 120,
+    monthly: config?.monthlyRate ?? 450,
+  };
+  const total = nights > 0 ? computeTotal(nights, rates) : 0;
+  const deposit = config?.deposit ?? 100;
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
@@ -159,6 +167,12 @@ export function ContractScreen({
           <ContractRow l="Payment" v={payMethod} />
           <ContractRow l="WhatsApp" v={`${phoneCC} ${state.phoneNum || "—"}`} mono />
           <div style={{ height: 1, background: "#ececec", margin: "14px 0 10px" }} />
+          <ContractRow l="Refundable deposit" v={`$${deposit}`} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0 4px" }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Total rental</span>
+            <span style={{ fontSize: 18, fontWeight: 700 }}>${total}</span>
+          </div>
+          <div style={{ height: 1, background: "#ececec", margin: "10px 0" }} />
           <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
             Terms & conditions
           </div>
