@@ -14,13 +14,27 @@ type Review = {
   when: string;
 };
 
-function ReviewCard({ r }: { r: Review }) {
+function useIsMobile(): boolean {
+  const [mob, setMob] = React.useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const onChange = (e: MediaQueryListEvent) => setMob(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return mob;
+}
+
+function ReviewCard({ r, mobile }: { r: Review; mobile: boolean }) {
   return (
     <div style={{
-      // Fixed card width so it never gets shrunk into a sliver. scroll-snap
-      // on the parent makes sure the user always lands on a fully-visible card.
-      flex: "0 0 320px",
-      width: 320,
+      // Mobile: 86% of viewport width, snap-centred — original carousel feel.
+      // Desktop: fixed 320px card so the row reads as a list of full cards.
+      flex: mobile ? "0 0 86%" : "0 0 320px",
+      width: mobile ? undefined : 320,
+      maxWidth: 320,
       padding: 18,
       borderRadius: 18,
       background: "#fff",
@@ -28,7 +42,7 @@ function ReviewCard({ r }: { r: Review }) {
       display: "flex",
       flexDirection: "column",
       gap: 10,
-      scrollSnapAlign: "start",
+      scrollSnapAlign: mobile ? "center" : "start",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -50,7 +64,59 @@ function ReviewCard({ r }: { r: Review }) {
   );
 }
 
-function ReviewsList({ reviews }: { reviews: Review[] }) {
+// Mobile: auto-advancing carousel with pager dots (the original UX).
+function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (!reviews.length) return;
+    const t = setInterval(() => {
+      setIdx((i) => {
+        const n = (i + 1) % reviews.length;
+        const el = ref.current;
+        if (el) {
+          const card = el.children[n] as HTMLElement | undefined;
+          if (card) el.scrollTo({ left: card.offsetLeft - 16, behavior: "smooth" });
+        }
+        return n;
+      });
+    }, 4500);
+    return () => clearInterval(t);
+  }, [reviews.length]);
+  return (
+    <>
+      <div ref={ref} className="phone-scroll" style={{
+        display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory",
+        padding: "4px 16px 8px", scrollBehavior: "smooth",
+      }}>
+        {reviews.map((r) => <ReviewCard key={r._id} r={r} mobile />)}
+      </div>
+      <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 8 }}>
+        {reviews.map((_, i) => (
+          <div key={i} style={{
+            width: i === idx ? 16 : 5, height: 5, borderRadius: 4,
+            background: i === idx ? "var(--ink)" : "#d6d6d6", transition: "all .3s",
+          }} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Desktop: scrollable row of full-width cards (snap-aligned so nothing gets cut).
+function ReviewsRow({ reviews }: { reviews: Review[] }) {
+  return (
+    <div className="phone-scroll" style={{
+      display: "flex", gap: 12, overflowX: "auto", overflowY: "hidden",
+      scrollSnapType: "x mandatory", scrollPaddingLeft: 16,
+      padding: "4px 16px 8px", scrollBehavior: "smooth",
+    }}>
+      {reviews.map((r) => <ReviewCard key={r._id} r={r} mobile={false} />)}
+    </div>
+  );
+}
+
+function ReviewsList({ reviews, mobile }: { reviews: Review[]; mobile: boolean }) {
   if (!reviews.length) return null;
   return (
     <div>
@@ -61,22 +127,7 @@ function ReviewsList({ reviews }: { reviews: Review[] }) {
         </div>
         <StarsRow size={15} />
       </div>
-      {/* Horizontal scroller with fixed-width cards and mandatory scroll-snap
-          so cards never get visually cut — the snap forces the user to land
-          on a fully-visible card. Trailing padding gives the last card room
-          on the right. */}
-      <div className="phone-scroll" style={{
-        display: "flex",
-        gap: 12,
-        overflowX: "auto",
-        overflowY: "hidden",
-        scrollSnapType: "x mandatory",
-        scrollPaddingLeft: 16,
-        padding: "4px 16px 8px",
-        scrollBehavior: "smooth",
-      }}>
-        {reviews.map((r) => <ReviewCard key={r._id} r={r} />)}
-      </div>
+      {mobile ? <ReviewsCarousel reviews={reviews} /> : <ReviewsRow reviews={reviews} />}
     </div>
   );
 }
@@ -105,11 +156,14 @@ function FeatureRow() {
   );
 }
 
-function MotoMiniCard({ b, price }: { b: BikeRow; price: number }) {
+function MotoMiniCard({ b, price, mobile }: { b: BikeRow; price: number; mobile: boolean }) {
   const s = bikeStyle(b.slug);
   return (
     <div style={{
-      width: "100%",
+      flex: mobile ? "0 0 70%" : undefined,
+      maxWidth: mobile ? 240 : undefined,
+      width: mobile ? undefined : "100%",
+      scrollSnapAlign: mobile ? "start" : undefined,
       borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", background: "#fff",
     }}>
       <div style={{ background: "#fafafa", padding: "12px 8px 0" }}>
@@ -135,6 +189,7 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
   const dailyRate = config?.dailyRate ?? 20;
   const weeklyRate = config?.weeklyRate ?? 120;
   const monthlyRate = config?.monthlyRate ?? 450;
+  const mobile = useIsMobile();
 
   return (
     <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", paddingBottom: 24 }}>
@@ -174,14 +229,23 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
       </div>
 
       <div style={{ padding: "24px 0 0" }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 12,
-          padding: "4px 16px 4px",
-        }}>
-          {bikes.map(b => <MotoMiniCard key={b._id} b={b} price={dailyRate} />)}
-        </div>
+        {mobile ? (
+          <div className="phone-scroll" style={{
+            display: "flex", gap: 12, overflowX: "auto", padding: "4px 16px 4px",
+            scrollSnapType: "x mandatory",
+          }}>
+            {bikes.map(b => <MotoMiniCard key={b._id} b={b} price={dailyRate} mobile />)}
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: 12,
+            padding: "4px 16px 4px",
+          }}>
+            {bikes.map(b => <MotoMiniCard key={b._id} b={b} price={dailyRate} mobile={false} />)}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "24px 16px 0" }}>
@@ -196,7 +260,7 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
       </div>
 
       <div style={{ padding: "28px 0 0" }}>
-        <ReviewsList reviews={reviews} />
+        <ReviewsList reviews={reviews} mobile={mobile} />
       </div>
 
       <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", padding: "20px 0 6px" }}>

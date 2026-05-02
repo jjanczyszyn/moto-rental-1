@@ -166,10 +166,32 @@ function RentalFlow() {
       break;
   }
 
-  // Single layout: fill the viewport on every device. The screens use
-  // percentage widths internally; on wide monitors we cap the content to a
-  // sensible reading column and center it so it doesn't stretch into a
-  // dashboard. Mobile picks up the same layout — there it just fills.
+  const isMobile = useIsMobile();
+
+  // Mobile: edge-to-edge, no max-width — phone-shaped UX with horizontally
+  // scrollable carousels for bikes and reviews.
+  if (isMobile) {
+    return (
+      <div style={{
+        width: "100%",
+        height: "100dvh",
+        background: "#fff",
+        position: "relative",
+        overflow: "hidden",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: fill the full viewport, content centred in a reading column so
+  // carousels don't stretch into empty space.
   return (
     <div style={{
       width: "100%",
@@ -177,8 +199,6 @@ function RentalFlow() {
       background: "#fff",
       display: "flex",
       justifyContent: "center",
-      paddingTop: "env(safe-area-inset-top, 0px)",
-      paddingBottom: "env(safe-area-inset-bottom, 0px)",
       overflow: "hidden",
     }}>
       <div style={{
@@ -196,4 +216,17 @@ function RentalFlow() {
       </div>
     </div>
   );
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
 }
