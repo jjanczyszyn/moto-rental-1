@@ -17,9 +17,9 @@ type Review = {
 function ReviewCard({ r }: { r: Review }) {
   return (
     <div style={{
-      flex: "0 0 86%", maxWidth: 320, padding: 18, borderRadius: 18,
+      width: "100%", padding: 18, borderRadius: 18,
       background: "#fff", border: "1px solid var(--line)",
-      display: "flex", flexDirection: "column", gap: 10, scrollSnapAlign: "center",
+      display: "flex", flexDirection: "column", gap: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -41,24 +41,7 @@ function ReviewCard({ r }: { r: Review }) {
   );
 }
 
-function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [idx, setIdx] = React.useState(0);
-  React.useEffect(() => {
-    if (!reviews.length) return;
-    const t = setInterval(() => {
-      setIdx(i => {
-        const n = (i + 1) % reviews.length;
-        const el = ref.current;
-        if (el) {
-          const card = el.children[n] as HTMLElement | undefined;
-          if (card) el.scrollTo({ left: card.offsetLeft - 16, behavior: "smooth" });
-        }
-        return n;
-      });
-    }, 4500);
-    return () => clearInterval(t);
-  }, [reviews.length]);
+function ReviewsList({ reviews }: { reviews: Review[] }) {
   if (!reviews.length) return null;
   return (
     <div>
@@ -69,19 +52,15 @@ function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
         </div>
         <StarsRow size={15} />
       </div>
-      <div ref={ref} className="phone-scroll" style={{
-        display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory",
-        padding: "4px 16px 8px", scrollBehavior: "smooth",
+      {/* Auto-fitting grid: 1 column on phone widths, 2+ on wider viewports.
+          No horizontal scroll, no carousel — every review is fully visible. */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: 12,
+        padding: "4px 16px 8px",
       }}>
         {reviews.map((r) => <ReviewCard key={r._id} r={r} />)}
-      </div>
-      <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 8 }}>
-        {reviews.map((_, i) => (
-          <div key={i} style={{
-            width: i === idx ? 16 : 5, height: 5, borderRadius: 4,
-            background: i === idx ? "var(--ink)" : "#d6d6d6", transition: "all .3s",
-          }} />
-        ))}
       </div>
     </div>
   );
@@ -200,7 +179,7 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
       </div>
 
       <div style={{ padding: "28px 0 0" }}>
-        <ReviewsCarousel reviews={reviews} />
+        <ReviewsList reviews={reviews} />
       </div>
 
       <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", padding: "20px 0 6px" }}>
