@@ -61,9 +61,26 @@ export function PaymentScreen({
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>{selected && <IconCheck size={12} color="#fff" stroke={3} />}</div>
               </button>
-              {selected && m.detail && (
+              {selected && (m.detail.length > 0 || m.url) && (
                 <div style={{ padding: "10px 14px 14px", borderTop: "1px solid var(--line)", fontSize: 12, color: "var(--ink-2)", lineHeight: 1.6, fontFamily: "JetBrains Mono, monospace" }}>
                   {m.detail.map((line, i) => <div key={i}>{line}</div>)}
+                  {m.url && (
+                    <a
+                      href={m.url}
+                      target={m.url.startsWith("http") ? "_blank" : undefined}
+                      rel={m.url.startsWith("http") ? "noreferrer" : undefined}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6,
+                        padding: "8px 12px", borderRadius: 8,
+                        background: "var(--ink)", color: "#fff",
+                        textDecoration: "none", fontSize: 12, fontWeight: 600,
+                        fontFamily: "Inter Tight, -apple-system, system-ui, sans-serif",
+                      }}
+                    >
+                      Open {m.label} →
+                    </a>
+                  )}
                 </div>
               )}
             </div>

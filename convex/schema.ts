@@ -17,6 +17,7 @@ export default defineSchema({
         sub: v.string(),
         detail: v.array(v.string()),
         enabled: v.boolean(),
+        url: v.optional(v.string()),
       })
     ),
   }),

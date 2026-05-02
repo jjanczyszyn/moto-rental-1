@@ -78,6 +78,21 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
                   {payMethod.detail.map((line, i) => <div key={i}>{line}</div>)}
                 </div>
               )}
+              {payMethod.url && (
+                <a
+                  href={payMethod.url}
+                  target={payMethod.url.startsWith("http") ? "_blank" : undefined}
+                  rel={payMethod.url.startsWith("http") ? "noreferrer" : undefined}
+                  style={{
+                    marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "10px 14px", borderRadius: 10,
+                    background: "var(--ink)", color: "#fff",
+                    textDecoration: "none", fontSize: 13, fontWeight: 600,
+                  }}
+                >
+                  Open {payMethod.label} →
+                </a>
+              )}
               {!isCash && (
                 <div style={{ marginTop: 14, padding: 12, background: "#fff", border: "1px solid var(--line)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
                   Once paid, send a screenshot of the payment confirmation to Karen on WhatsApp so she can confirm your reservation.
