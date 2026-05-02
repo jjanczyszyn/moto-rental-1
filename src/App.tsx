@@ -2,7 +2,6 @@ import React from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
-import { IOSDevice } from "./components/IOSDevice";
 import { useReservationDraft, toISODate } from "./hooks/useReservationDraft";
 import { HomeScreen } from "./screens/Home";
 import { CalendarScreen } from "./screens/Calendar";
@@ -195,11 +194,27 @@ function RentalFlow() {
       </div>
     );
   }
+
+  // Desktop: a clean centered web card. No phone bezel, status bar, or home
+  // indicator — the screens are designed for a narrow column so we cap the
+  // width and let the page background show through around it.
   return (
-    <IOSDevice width={402} height={874}>
-      <div style={{ height: "100%", background: "#fff", position: "relative", overflow: "hidden", paddingTop: 54 }}>
+    <div style={{
+      width: 440,
+      maxWidth: "100%",
+      height: "min(900px, 92vh)",
+      minHeight: 600,
+      background: "#fff",
+      borderRadius: 20,
+      overflow: "hidden",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
+      display: "flex",
+      flexDirection: "column",
+      position: "relative",
+    }}>
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
         {content}
       </div>
-    </IOSDevice>
+    </div>
   );
 }
