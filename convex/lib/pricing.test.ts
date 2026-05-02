@@ -37,6 +37,25 @@ describe("computeTotal", () => {
   it("60 days = 2 months = $900", () => {
     expect(computeTotal(60, RATES)).toBe(900);
   });
+
+  it("29 days ≤ 30 days (caps at monthly)", () => {
+    expect(computeTotal(29, RATES)).toBe(450);
+    expect(computeTotal(29, RATES)).toBeLessThanOrEqual(computeTotal(30, RATES));
+  });
+
+  it("6 days ≤ 7 days (caps at weekly)", () => {
+    expect(computeTotal(6, RATES)).toBe(120);
+    expect(computeTotal(6, RATES)).toBeLessThanOrEqual(computeTotal(7, RATES));
+  });
+
+  it("monotonic: longer rental never costs less", () => {
+    let prev = 0;
+    for (let n = 1; n <= 90; n++) {
+      const t = computeTotal(n, RATES);
+      expect(t).toBeGreaterThanOrEqual(prev);
+      prev = t;
+    }
+  });
 });
 
 describe("daysBetweenISO", () => {
