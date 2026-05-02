@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { countryNameToCC } from "./countries";
+import { COUNTRIES, countryNameToCC, findCountry } from "./countries";
 
 describe("countryNameToCC", () => {
   it("maps common OCR-produced names to phone codes", () => {
@@ -23,5 +23,24 @@ describe("countryNameToCC", () => {
     expect(countryNameToCC("")).toBeNull();
     expect(countryNameToCC(null)).toBeNull();
     expect(countryNameToCC(undefined)).toBeNull();
+  });
+});
+
+describe("COUNTRIES dropdown list", () => {
+  it("every dropdown country resolves to a phone code", () => {
+    for (const c of COUNTRIES) {
+      expect(countryNameToCC(c.name), `missing CC for ${c.name}`).not.toBeNull();
+    }
+  });
+
+  it("findCountry is case-insensitive", () => {
+    expect(findCountry("united states")?.name).toBe("United States");
+    expect(findCountry("FRANCE")?.name).toBe("France");
+    expect(findCountry("nicaragua")?.flag).toBe("🇳🇮");
+  });
+
+  it("findCountry returns null for unknown / empty", () => {
+    expect(findCountry("Atlantis")).toBeNull();
+    expect(findCountry("")).toBeNull();
   });
 });

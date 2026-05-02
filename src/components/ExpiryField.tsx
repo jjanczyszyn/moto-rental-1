@@ -33,11 +33,11 @@ export function ExpiryField({
 
   return (
     <Field
-      label="Expiry date (dd-mm-YYYY)"
+      label="Expiry date (DD-MM-YYYY)"
       value={text}
       onChange={handleChange}
       mono
-      placeholder="dd-mm-YYYY"
+      placeholder="DD-MM-YYYY"
     />
   );
 }

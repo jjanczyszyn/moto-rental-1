@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Common";
 import { ExpiryField } from "../components/ExpiryField";
+import { CountrySelect } from "../components/CountrySelect";
 import { IconCheck, IconUpload, IconRefresh } from "../components/Icons";
 
 type Phase = "idle" | "scanning" | "manual" | "done";
@@ -172,7 +173,7 @@ export function OCRScreen({
             <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
             <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
             <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
-            <Field label="Country" value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
+            <CountrySelect value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
           </div>
         )}
 
@@ -185,7 +186,7 @@ export function OCRScreen({
             <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
             <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
             <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
-            <Field label="Country" value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
+            <CountrySelect value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
             <button
               onClick={() => {
                 setPhase("idle");
