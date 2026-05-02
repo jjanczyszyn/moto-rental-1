@@ -1,0 +1,205 @@
+import React from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
+import { IOSDevice } from "./components/IOSDevice";
+import { useReservationDraft, toISODate } from "./hooks/useReservationDraft";
+import { HomeScreen } from "./screens/Home";
+import { CalendarScreen } from "./screens/Calendar";
+import { BikePickScreen } from "./screens/BikePick";
+import { OCRScreen } from "./screens/OCR";
+import { PhoneScreen } from "./screens/Phone";
+import { PaymentScreen } from "./screens/Payment";
+import { ContractScreen } from "./screens/Contract";
+import { DeliveryScreen } from "./screens/Delivery";
+import { DoneScreen } from "./screens/Done";
+import { AdminScreen } from "./screens/Admin";
+
+type Screen = "home" | "calendar" | "bike" | "ocr" | "phone" | "pay" | "contract" | "delivery" | "done";
+const SCREENS: Screen[] = ["home", "calendar", "bike", "ocr", "phone", "pay", "contract", "delivery", "done"];
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
+}
+
+export default function App() {
+  // Tiny client-side router for /admin
+  const [route, setRoute] = React.useState<string>(() => window.location.hash || "");
+  React.useEffect(() => {
+    const onHash = () => setRoute(window.location.hash);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  if (route === "#/admin") return <AdminScreen />;
+
+  return <RentalFlow />;
+}
+
+function RentalFlow() {
+  const { state, set, reset } = useReservationDraft();
+  const config = useQuery(api.config.get);
+  const rates = {
+    daily: config?.dailyRate ?? 20,
+    weekly: config?.weeklyRate ?? 120,
+    monthly: config?.monthlyRate ?? 450,
+  };
+
+  const [screen, setScreen] = React.useState<Screen>("home");
+  const [submitting, setSubmitting] = React.useState(false);
+  const [doneCode, setDoneCode] = React.useState<string | null>(null);
+
+  const createReservation = useMutation(api.reservations.create);
+  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
+
+  const go = (s: Screen) => setScreen(s);
+  const next = () => {
+    const i = SCREENS.indexOf(screen);
+    if (i < SCREENS.length - 1) go(SCREENS[i + 1]);
+  };
+  const back = () => {
+    const i = SCREENS.indexOf(screen);
+    if (i > 0) go(SCREENS[i - 1]);
+  };
+
+  const handleHome = () => {
+    reset();
+    setDoneCode(null);
+    go("home");
+  };
+
+  const handleConfirm = async () => {
+    if (!state.startDate || !state.endDate || !state.bikeId) return;
+    setSubmitting(true);
+    try {
+      // Upload signature canvas to Convex storage if drawn.
+      let signaturePngId: Id<"_storage"> | undefined;
+      if (state.signature?.mode === "draw") {
+        const canvas = (window as unknown as { __sigCanvas?: HTMLCanvasElement }).__sigCanvas;
+        if (canvas) {
+          const blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob((b) => resolve(b), "image/png")
+          );
+          if (blob) {
+            const url = await generateUploadUrl({});
+            const res = await fetch(url, { method: "POST", body: blob });
+            if (res.ok) {
+              const { storageId } = (await res.json()) as { storageId: Id<"_storage"> };
+              signaturePngId = storageId;
+            }
+          }
+        }
+      }
+
+      const result = await createReservation({
+        input: {
+          bikeId: state.bikeId as Id<"bikes">,
+          startDate: toISODate(state.startDate),
+          endDate: toISODate(state.endDate),
+
+          docFirstName: state.docFirstName,
+          docLastName: state.docLastName,
+          docNumber: state.docNumber,
+          docExpiry: state.docExpiry,
+          docCountry: state.docCountry,
+          docImageId: state.docImageStorageId
+            ? (state.docImageStorageId as Id<"_storage">)
+            : undefined,
+          docOcrRawJson: state.docOcrRawJson ?? undefined,
+
+          phoneCC: state.phoneCC,
+          phoneNum: state.phoneNum,
+          phoneNote: state.phoneNote,
+
+          payMethod: state.payMethod ?? "cash",
+
+          signatureMode: state.signature?.mode ?? "type",
+          signaturePng: signaturePngId,
+          signatureTyped: state.signature?.typed,
+
+          deliveryAddr: state.deliveryAddr,
+          deliveryHour: state.deliveryHour ?? 10,
+          deliveryDate: toISODate(state.startDate),
+        },
+      });
+      setDoneCode(result.code);
+      go("done");
+    } catch (err) {
+      console.error("createReservation failed", err);
+      alert("Sorry, something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  let content: React.ReactNode;
+  switch (screen) {
+    case "home":
+      content = <HomeScreen onStart={() => go("calendar")} />;
+      break;
+    case "calendar":
+      content = <CalendarScreen state={state} set={set} onBack={() => go("home")} onNext={next} rates={rates} />;
+      break;
+    case "bike":
+      content = <BikePickScreen state={state} set={set} onBack={back} onNext={next} rates={rates} />;
+      break;
+    case "ocr":
+      content = <OCRScreen state={state} set={set} onBack={back} onNext={next} />;
+      break;
+    case "phone":
+      content = <PhoneScreen state={state} set={set} onBack={back} onNext={next} />;
+      break;
+    case "pay":
+      content = <PaymentScreen state={state} set={set} onBack={back} onNext={next} />;
+      break;
+    case "contract":
+      content = <ContractScreen state={state} set={set} onBack={back} onNext={next} />;
+      break;
+    case "delivery":
+      content = (
+        <DeliveryScreen
+          state={state}
+          set={set}
+          onBack={back}
+          onConfirm={handleConfirm}
+          submitting={submitting}
+        />
+      );
+      break;
+    case "done":
+      content = doneCode ? <DoneScreen code={doneCode} onHome={handleHome} /> : null;
+      break;
+  }
+
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <div style={{
+        width: "100%", height: "100dvh", background: "#fff",
+        position: "relative", overflow: "hidden",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        display: "flex", flexDirection: "column",
+      }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
+          {content}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <IOSDevice width={402} height={874}>
+      <div style={{ height: "100%", background: "#fff", position: "relative", overflow: "hidden", paddingTop: 54 }}>
+        {content}
+      </div>
+    </IOSDevice>
+  );
+}

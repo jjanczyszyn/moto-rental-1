@@ -14,10 +14,8 @@ that the backend must fulfil.
 | Frontend (current) | React via Babel-in-browser + JSX (`index.html` + `*.jsx`) |
 | Frontend (target)  | Vite + React + TypeScript, hosted on **GitHub Pages** |
 | Backend            | **Convex** — schema, queries, mutations, scheduled functions |
-| OCR                | Convex action calling a vision API (suggest: Mindee, Google Vision, or `tesseract.js` for v1) |
 | Payments           | No card processing in v1 — payment methods are display-only contact details (Cash/Zelle/Wise/Revolut/Venmo/PayPal). Payment _confirmation_ happens out-of-band over WhatsApp. |
-| Notifications      | WhatsApp Business API (twilio or 360dialog) — used to message both renter and owner with reservation details and contract PDF |
-| Reviews            | Pulled from the Google Business Profile via Places API on a 24h cron, cached in Convex |
+
 
 ---
 
@@ -55,9 +53,6 @@ export default defineSchema({
     plate:       v.string(),         // 'POP-217'
     range:       v.string(),         // '70 km range' or '125cc · 4-speed'
     image:       v.string(),         // public URL or storage key
-    accent:      v.string(),         // hex, for UI
-    body:        v.string(),
-    seat:        v.string(),
     isActive:    v.boolean(),        // owner can hide a bike
   })
     .index("by_slug", ["slug"]),
@@ -152,14 +147,9 @@ export default defineSchema({
 - `reservations.cancel({ id })`.
 
 ### Actions (run outside the deterministic context — can call external APIs)
-- `ocr.extractFromImage({ storageId })` → calls vision API, returns `{ firstName, lastName, docNumber, expiryISO, country, rawJson }`.
 - `contract.generatePdf({ reservationId })` → renders a PDF server-side (using `@react-pdf/renderer` or similar) and stores it; messages the owner over WhatsApp with the link.
-- `whatsapp.notifyOwner({ reservationId })` → sends a message to **+505 8975 0052** with reservation summary + contract link.
-- `whatsapp.notifyRenter({ reservationId })` → confirmation message with reservation code.
-- `reviews.refresh()` — cron, daily — pulls latest 5★ reviews from Google Places and upserts into `reviews` table.
+- `reviews.refresh()` — cron, daily — pulls latest 5★ reviews from https://share.google/IXOC6DlEv7Zk9d18W and upserts into `reviews` table.
 
-### Scheduled
-- `crons.ts` — daily reviews refresh; daily reminder for upcoming deliveries (8am local).
 
 ---
 
@@ -199,6 +189,13 @@ fake data. Replace with:
 2. Frontend calls `ocr.extractFromImage` action.
 3. Action calls the chosen vision API and normalises to:
 
+
+
+
+4. Frontend pre-fills the editable fields. User can correct anything.
+
+Use `tesseract.js` in-browser
+
 ```ts
 {
   firstName: string;
@@ -207,16 +204,10 @@ fake data. Replace with:
   expiryISO: string;       // 'YYYY-MM-DD'
   country:   string;       // ISO country name
   rawJson:   string;       // for audit
-  confidence: number;      // 0..1 — show "please verify" banner if < 0.8
 }
 ```
 
-4. Frontend pre-fills the editable fields. User can correct anything.
-
-Suggested provider: **Mindee Driver License / Passport API** — has a free tier,
-returns structured fields directly. Fallback for v0: `tesseract.js` in-browser
-with a regex pass; works offline but lower accuracy.
-
+If something fails ask the user to fill the fields themselves before moving to the next step.
 ---
 
 ## 6. Reservation state machine
@@ -239,7 +230,6 @@ pending  ──────WhatsApp──→ confirms? ──yes──→  confi
 
 The frontend "Confirmation" screen lands on `pending`. The owner reviews in
 their inbox (a separate `/admin` route, password-gated) and flips to `confirmed`.
-WhatsApp messages are triggered on each state transition.
 
 ---
 
@@ -274,7 +264,7 @@ cluttering the DB.
 - View the contract PDF and signature for any reservation
 
 Auth: Convex's built-in auth with a single allow-list of owner phone numbers
-(`+50589750052`, `+50577185403`). Magic-link via WhatsApp.
+(`+50589750052`, `+16469340781`). and hardcoded passwords: (`Karen-esta-Fuert3`, `JJ-is-f0rmidable`)
 
 ---
 
@@ -285,7 +275,6 @@ Auth: Convex's built-in auth with a single allow-list of owner phone numbers
 | Static frontend | GitHub Pages | `npm run build` → `dist/` → push to `gh-pages` branch (or Pages action) |
 | Convex | Convex Cloud | `npx convex deploy` |
 | Env vars on frontend | `VITE_CONVEX_URL` | committed to repo (it's a public URL) |
-| Secrets | Convex dashboard | OCR API key, WhatsApp API token, Google Places key |
 
 For the current Babel-in-browser prototype, GitHub Pages can serve `index.html`
 directly — no build step needed. See `README.md`.
@@ -299,19 +288,9 @@ directly — no build step needed. See `README.md`.
 2. Wrap `<App>` in `<ConvexProvider client={convex}>`.
 3. Replace each hardcoded list with a `useQuery` (table above).
 4. Add the `useReservationDraft()` hook and wire mutations on the final step.
-5. Build the OCR action — start with `tesseract.js` to keep it free; upgrade
-   later.
-6. Build the WhatsApp notify action.
-7. Build the `/admin` view.
-8. Add tests on `lib/pricing.ts` — the optimal-bundle algorithm is non-trivial
+5. Build the OCR action — start with `tesseract.js` to keep it free;
+6. Build the `/admin` view.
+7. Add tests on `lib/pricing.ts` — the optimal-bundle algorithm is non-trivial
    and we don't want regressions.
 
----
 
-## 11. Open questions
-
-- Confirm the daily/weekly/monthly defaults of $20 / $120 / $450 are right.
-- Confirm $100 deposit is right.
-- Do you want SMS fallback if the user's WhatsApp number is invalid? (Twilio supports both.)
-- Is there a second owner WhatsApp (`+505 7718 5403`) that should also be CC'd on every reservation?
-- Insurance flow — currently the contract states "third-party only, renter responsible for damage." Confirm.
