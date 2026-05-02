@@ -17,9 +17,18 @@ type Review = {
 function ReviewCard({ r }: { r: Review }) {
   return (
     <div style={{
-      width: "100%", padding: 18, borderRadius: 18,
-      background: "#fff", border: "1px solid var(--line)",
-      display: "flex", flexDirection: "column", gap: 10,
+      // Fixed card width so it never gets shrunk into a sliver. scroll-snap
+      // on the parent makes sure the user always lands on a fully-visible card.
+      flex: "0 0 320px",
+      width: 320,
+      padding: 18,
+      borderRadius: 18,
+      background: "#fff",
+      border: "1px solid var(--line)",
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      scrollSnapAlign: "start",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -52,13 +61,19 @@ function ReviewsList({ reviews }: { reviews: Review[] }) {
         </div>
         <StarsRow size={15} />
       </div>
-      {/* Auto-fitting grid: 1 column on phone widths, 2+ on wider viewports.
-          No horizontal scroll, no carousel — every review is fully visible. */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+      {/* Horizontal scroller with fixed-width cards and mandatory scroll-snap
+          so cards never get visually cut — the snap forces the user to land
+          on a fully-visible card. Trailing padding gives the last card room
+          on the right. */}
+      <div className="phone-scroll" style={{
+        display: "flex",
         gap: 12,
+        overflowX: "auto",
+        overflowY: "hidden",
+        scrollSnapType: "x mandatory",
+        scrollPaddingLeft: 16,
         padding: "4px 16px 8px",
+        scrollBehavior: "smooth",
       }}>
         {reviews.map((r) => <ReviewCard key={r._id} r={r} />)}
       </div>
