@@ -27,9 +27,6 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
           <IconCheck size={34} color="#fff" stroke={3} />
         </div>
         <h2 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: -0.6 }}>You're all set.</h2>
-        <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 8 }}>
-          Karen will WhatsApp you to confirm. See you on the road.
-        </p>
         <div style={{
           marginTop: 18, display: "inline-block", padding: "8px 14px",
           background: "#fafafa", border: "1px solid var(--line)", borderRadius: 999,
@@ -41,7 +38,50 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
 
       {r && (
         <div style={{ padding: "0 16px" }}>
-          <div style={{ border: "1px solid var(--line)", borderRadius: 16, padding: 18 }}>
+          {payMethod && (
+            <div style={{
+              padding: 18,
+              border: "1px solid var(--line)", borderRadius: 16, background: "#fafafa",
+            }}>
+              <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>
+                {isCash ? "At delivery" : "How to pay"}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{payMethod.label}</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace", marginBottom: 10 }}>
+                {payMethod.sub}
+              </div>
+              {payMethod.detail.length > 0 && (
+                <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace" }}>
+                  {payMethod.detail.map((line, i) => <div key={i}>{line}</div>)}
+                </div>
+              )}
+              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700 }}>
+                Amount: ${r.totalUSD}
+              </div>
+              {payMethod.url && (
+                <a
+                  href={payMethod.url}
+                  target={payMethod.url.startsWith("http") ? "_blank" : undefined}
+                  rel={payMethod.url.startsWith("http") ? "noreferrer" : undefined}
+                  style={{
+                    marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "10px 14px", borderRadius: 10,
+                    background: "var(--ink)", color: "#fff",
+                    textDecoration: "none", fontSize: 13, fontWeight: 600,
+                  }}
+                >
+                  Open {payMethod.label} →
+                </a>
+              )}
+              {!isCash && (
+                <div style={{ marginTop: 14, padding: 12, background: "#fff", border: "1px solid var(--line)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
+                  Once paid, send a <b>screenshot of the payment confirmation</b> to Karen on WhatsApp so she can confirm your reservation.
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: 16, border: "1px solid var(--line)", borderRadius: 16, padding: 18 }}>
             <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 12 }}>
               Reservation details
             </div>
@@ -60,46 +100,6 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
               <span style={{ fontSize: 20, fontWeight: 700 }}>${r.totalUSD}</span>
             </div>
           </div>
-
-          {payMethod && (
-            <div style={{
-              marginTop: 16, padding: 18,
-              border: "1px solid var(--line)", borderRadius: 16, background: "#fafafa",
-            }}>
-              <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>
-                {isCash ? "At delivery" : "How to pay"}
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{payMethod.label}</div>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace", marginBottom: 10 }}>
-                {payMethod.sub}
-              </div>
-              {payMethod.detail.length > 0 && (
-                <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace" }}>
-                  {payMethod.detail.map((line, i) => <div key={i}>{line}</div>)}
-                </div>
-              )}
-              {payMethod.url && (
-                <a
-                  href={payMethod.url}
-                  target={payMethod.url.startsWith("http") ? "_blank" : undefined}
-                  rel={payMethod.url.startsWith("http") ? "noreferrer" : undefined}
-                  style={{
-                    marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "10px 14px", borderRadius: 10,
-                    background: "var(--ink)", color: "#fff",
-                    textDecoration: "none", fontSize: 13, fontWeight: 600,
-                  }}
-                >
-                  Open {payMethod.label} →
-                </a>
-              )}
-              {!isCash && (
-                <div style={{ marginTop: 14, padding: 12, background: "#fff", border: "1px solid var(--line)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
-                  Once paid, send a screenshot of the payment confirmation to Karen on WhatsApp so she can confirm your reservation.
-                </div>
-              )}
-            </div>
-          )}
 
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <a
