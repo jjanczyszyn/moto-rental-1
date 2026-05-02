@@ -11,7 +11,9 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
   const config = useQuery(api.config.get);
-  const payLabel = config?.paymentMethods.find((p) => p.id === r?.payMethod)?.label ?? "—";
+  const payMethod = config?.paymentMethods.find((p) => p.id === r?.payMethod) ?? null;
+  const payLabel = payMethod?.label ?? "—";
+  const isCash = r?.payMethod === "cash";
   const hour = r?.deliveryHour;
   const hourLbl = hour == null ? "—" : hour === 12 ? "12:00 pm" : hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`;
 
@@ -59,9 +61,38 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
             </div>
           </div>
 
+          {payMethod && (
+            <div style={{
+              marginTop: 16, padding: 18,
+              border: "1px solid var(--line)", borderRadius: 16, background: "#fafafa",
+            }}>
+              <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>
+                {isCash ? "At delivery" : "How to pay"}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{payMethod.label}</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace", marginBottom: 10 }}>
+                {payMethod.sub}
+              </div>
+              {payMethod.detail.length > 0 && (
+                <div style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6, fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace" }}>
+                  {payMethod.detail.map((line, i) => <div key={i}>{line}</div>)}
+                </div>
+              )}
+              {!isCash && (
+                <div style={{ marginTop: 14, padding: 12, background: "#fff", border: "1px solid var(--line)", borderRadius: 10, fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
+                  Once paid, send a screenshot of the payment confirmation to Karen on WhatsApp so she can confirm your reservation.
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <a
-              href={`https://wa.me/50589750052?text=Hi%2C%20I%20just%20booked%20${code}`}
+              href={`https://wa.me/50589750052?text=${encodeURIComponent(
+                isCash
+                  ? `Hi Karen, I just booked ${code}. See you at delivery.`
+                  : `Hi Karen, I just booked ${code} and I'm sending the payment screenshot.`
+              )}`}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -71,7 +102,7 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
               }}
             >
               <IconChat size={18} color="#fff" />
-              <span>Message Karen</span>
+              <span>{isCash ? "Message Karen" : "Send screenshot to Karen"}</span>
             </a>
           </div>
 

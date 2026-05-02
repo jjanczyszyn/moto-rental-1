@@ -24,9 +24,10 @@ export function PaymentScreen({
       <StepHeader onBack={onBack} title="How will you pay?" step={5} total={7} />
       <ProgressBar step={5} total={7} />
       <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 16px" }}>
-        <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.5, margin: "8px 0 16px" }}>
-          Choose any. We'll confirm the exact instructions over WhatsApp.
-        </p>
+        <div style={{ marginTop: 8, marginBottom: 14, padding: 14, background: "#fafafa", borderRadius: 12, fontSize: 13, color: "var(--ink-2)", display: "flex", gap: 10, alignItems: "center" }}>
+          <IconShield size={18} />
+          <div>${config?.deposit ?? 100} deposit refunded on return.</div>
+        </div>
         {methods.map((m) => {
           const selected = state.payMethod === m.id;
           return (
@@ -68,10 +69,6 @@ export function PaymentScreen({
             </div>
           );
         })}
-        <div style={{ marginTop: 14, padding: 14, background: "#fafafa", borderRadius: 12, fontSize: 12, color: "var(--ink-2)", display: "flex", gap: 10 }}>
-          <IconShield size={18} />
-          <div>${config?.deposit ?? 100} deposit refunded on return. No upfront charge — pay at hand-off or via the chosen method before delivery.</div>
-        </div>
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
         <PrimaryButton disabled={!state.payMethod} onClick={onNext}>Continue</PrimaryButton>

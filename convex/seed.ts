@@ -6,7 +6,7 @@ export const all = mutation({
     // config — only zelle and bank transfers carry the legal beneficiary name
     // (those are the channels where it's needed for the recipient lookup).
     const paymentMethods = [
-      { id: "cash", label: "Cash on delivery", sub: "USD or córdobas at hand-off", detail: ["Pay Karen or JJ in USD or córdobas when we deliver the moto."], enabled: true },
+      { id: "cash", label: "Cash on delivery", sub: "USD or córdobas at hand-off", detail: ["Pay Karen in USD or córdobas when we deliver the moto."], enabled: true },
       { id: "venmo", label: "Venmo", sub: "@justina-lydia", detail: ["Send to @justina-lydia."], enabled: true },
       { id: "zelle", label: "Zelle", sub: "6469340781", detail: ["Phone: 646 934 0781", "Recipient: Justyna Janczyszyn"], enabled: true },
       { id: "paypal", label: "PayPal", sub: "justinalydiacuddles@gmail.com", detail: ["Email: justinalydiacuddles@gmail.com", "Friends & Family preferred (no fee)."], enabled: true },
