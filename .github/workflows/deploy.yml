@@ -29,6 +29,8 @@ jobs:
 
       - name: Generate Convex types
         run: npx convex codegen --typecheck=disable
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - run: npm run build
         env:
