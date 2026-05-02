@@ -17,18 +17,6 @@ import { AdminScreen } from "./screens/Admin";
 type Screen = "home" | "calendar" | "bike" | "ocr" | "phone" | "pay" | "contract" | "delivery" | "done";
 const SCREENS: Screen[] = ["home", "calendar", "bike", "ocr", "phone", "pay", "contract", "delivery", "done"];
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches
-  );
-  React.useEffect(() => {
-    const mq = window.matchMedia("(max-width: 700px)");
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return isMobile;
-}
 
 export default function App() {
   // Tiny client-side router for /admin
@@ -178,42 +166,33 @@ function RentalFlow() {
       break;
   }
 
-  const isMobile = useIsMobile();
-  if (isMobile) {
-    return (
+  // Single layout: fill the viewport on every device. The screens use
+  // percentage widths internally; on wide monitors we cap the content to a
+  // sensible reading column and center it so it doesn't stretch into a
+  // dashboard. Mobile picks up the same layout — there it just fills.
+  return (
+    <div style={{
+      width: "100%",
+      height: "100dvh",
+      background: "#fff",
+      display: "flex",
+      justifyContent: "center",
+      paddingTop: "env(safe-area-inset-top, 0px)",
+      paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      overflow: "hidden",
+    }}>
       <div style={{
-        width: "100%", height: "100dvh", background: "#fff",
-        position: "relative", overflow: "hidden",
-        paddingTop: "env(safe-area-inset-top, 0px)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        display: "flex", flexDirection: "column",
+        width: "100%",
+        maxWidth: 720,
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}>
         <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
           {content}
         </div>
-      </div>
-    );
-  }
-
-  // Desktop: a clean centered web card. No phone bezel, status bar, or home
-  // indicator — the screens are designed for a narrow column so we cap the
-  // width and let the page background show through around it.
-  return (
-    <div style={{
-      width: 440,
-      maxWidth: "100%",
-      height: "min(900px, 92vh)",
-      minHeight: 600,
-      background: "#fff",
-      borderRadius: 20,
-      overflow: "hidden",
-      boxShadow: "0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-    }}>
-      <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
-        {content}
       </div>
     </div>
   );
