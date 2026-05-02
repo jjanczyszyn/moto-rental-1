@@ -1,6 +1,7 @@
 import React from "react";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Common";
+import { countryNameToCC } from "../lib/countries";
 
 const COUNTRY_CODES = [
   { code: "+505", name: "Nicaragua", flag: "🇳🇮" },
@@ -69,6 +70,14 @@ export function PhoneScreen({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [ccOpen]);
 
+  // Default the phone country code from the document country once — only
+  // until the user has explicitly picked a code from the dropdown.
+  React.useEffect(() => {
+    if (state.phoneCCManuallySet) return;
+    const fromDoc = countryNameToCC(state.docCountry);
+    if (fromDoc && fromDoc !== state.phoneCC) set({ phoneCC: fromDoc });
+  }, [state.docCountry, state.phoneCCManuallySet, state.phoneCC, set]);
+
   const currentCC = state.phoneCC || "+505";
   const currentEntry = COUNTRY_CODES.find((c) => c.code === currentCC) || COUNTRY_CODES[0];
 
@@ -123,7 +132,7 @@ export function PhoneScreen({
                     <button
                       key={c.code + c.name}
                       type="button"
-                      onClick={() => { set({ phoneCC: c.code }); setCcOpen(false); }}
+                      onClick={() => { set({ phoneCC: c.code, phoneCCManuallySet: true }); setCcOpen(false); }}
                       style={{
                         width: "100%", padding: "10px 12px", display: "flex", alignItems: "center", gap: 10,
                         background: c.code === currentCC ? "#fafafa" : "#fff", border: "none", cursor: "pointer", textAlign: "left",

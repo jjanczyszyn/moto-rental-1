@@ -20,6 +20,7 @@ export interface ReservationDraft {
   docOcrRawJson: string | null;
   docImageStorageId: string | null;
   phoneCC: string;
+  phoneCCManuallySet: boolean;
   phoneNum: string;
   phoneNote?: string;
   payMethod: string | null;
@@ -42,6 +43,7 @@ const INITIAL: ReservationDraft = {
   docOcrRawJson: null,
   docImageStorageId: null,
   phoneCC: "+505",
+  phoneCCManuallySet: false,
   phoneNum: "",
   phoneNote: undefined,
   payMethod: null,
