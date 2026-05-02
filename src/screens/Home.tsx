@@ -94,7 +94,7 @@ function MotoMiniCard({ b, price }: { b: BikeRow; price: number }) {
   const s = bikeStyle(b.slug);
   return (
     <div style={{
-      flex: "0 0 70%", maxWidth: 240, scrollSnapAlign: "start",
+      width: "100%",
       borderRadius: 16, border: "1px solid var(--line)", overflow: "hidden", background: "#fff",
     }}>
       <div style={{ background: "#fafafa", padding: "12px 8px 0" }}>
@@ -159,9 +159,11 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
       </div>
 
       <div style={{ padding: "24px 0 0" }}>
-        <div className="phone-scroll" style={{
-          display: "flex", gap: 12, overflowX: "auto", padding: "4px 16px 4px",
-          scrollSnapType: "x mandatory",
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          padding: "4px 16px 4px",
         }}>
           {bikes.map(b => <MotoMiniCard key={b._id} b={b} price={dailyRate} />)}
         </div>

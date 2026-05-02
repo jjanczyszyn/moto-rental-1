@@ -6,6 +6,7 @@ import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Com
 import { ExpiryField } from "../components/ExpiryField";
 import { CountrySelect } from "../components/CountrySelect";
 import { IconCheck, IconUpload, IconRefresh } from "../components/Icons";
+import { parseDocumentText } from "../lib/ocrParse";
 
 type Phase = "idle" | "scanning" | "manual" | "done";
 
@@ -14,55 +15,6 @@ const uploadCard: React.CSSProperties = {
   background: "#fff", padding: "32px 16px", display: "flex", flexDirection: "column",
   alignItems: "center", gap: 10, cursor: "pointer",
 };
-
-function parseTesseractText(text: string) {
-  const upper = text.toUpperCase();
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-  // Document number: longest alphanumeric token >= 6 chars, mostly uppercase/digits
-  const tokens = upper.match(/[A-Z0-9-]{6,}/g) ?? [];
-  const docNumber = tokens.sort((a, b) => b.length - a.length)[0] ?? "";
-
-  // Expiry: ISO YYYY-MM-DD or DD/MM/YYYY or MM/DD/YYYY
-  let expiryISO = "";
-  const isoMatch = text.match(/(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})/);
-  const dmyMatch = text.match(/(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2})/);
-  if (isoMatch) {
-    const [, y, m, d] = isoMatch;
-    expiryISO = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  } else if (dmyMatch) {
-    const [, d, m, y] = dmyMatch;
-    expiryISO = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-
-  // First/last name: line preceded by "GIVEN NAME" or "NAMES" labels; else first
-  // line of mostly uppercase letters with at least 2 words.
-  let firstName = "";
-  let lastName = "";
-  const nameLineIdx = lines.findIndex((l) => /NAME|NOMBRE|GIVEN/i.test(l));
-  const candidate =
-    nameLineIdx >= 0 && nameLineIdx + 1 < lines.length
-      ? lines[nameLineIdx + 1]
-      : lines.find((l) => /^[A-Z][A-Z\s]+\s[A-Z]/.test(l)) ?? "";
-  const parts = candidate.replace(/[^A-Za-z\s'-]/g, "").trim().split(/\s+/);
-  if (parts.length >= 2) {
-    firstName = parts[0];
-    lastName = parts.slice(1).join(" ");
-  }
-
-  // Country: known ISO names
-  const countries = [
-    "United States", "USA", "Canada", "Mexico", "France", "Spain", "Germany",
-    "United Kingdom", "Italy", "Netherlands", "Australia", "Nicaragua",
-    "Costa Rica", "Argentina", "Brazil", "Colombia", "Chile", "Peru",
-  ];
-  let country = "";
-  for (const c of countries) {
-    if (upper.includes(c.toUpperCase())) { country = c; break; }
-  }
-
-  return { firstName, lastName, docNumber, expiryISO, country };
-}
 
 export function OCRScreen({
   state, set, onBack, onNext,
@@ -100,10 +52,10 @@ export function OCRScreen({
         },
       });
       const text = result?.data?.text ?? "";
-      const parsed = parseTesseractText(text);
+      const parsed = parseDocumentText(text);
       const storageId = await uploadPromise;
 
-      if (!parsed.firstName && !parsed.docNumber) {
+      if (!parsed.firstName && !parsed.docNumber && !parsed.expiryISO) {
         // OCR didn't find anything useful — let the user fill fields manually.
         set({ docImageStorageId: storageId, docOcrRawJson: JSON.stringify({ text }) });
         setPhase("manual");
