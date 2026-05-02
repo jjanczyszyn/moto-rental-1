@@ -9,7 +9,7 @@ export const all = mutation({
       { id: "cash", label: "Cash on delivery", sub: "USD or córdobas at hand-off", detail: ["Payment on delivery in USD or córdobas."], enabled: true },
       { id: "venmo", label: "Venmo", sub: "@justina-lydia", detail: ["Send to @justina-lydia."], enabled: true, url: "https://venmo.com/u/justina-lydia" },
       { id: "zelle", label: "Zelle", sub: "6469340781", detail: ["Phone: 646 934 0781", "Recipient: Justyna Janczyszyn"], enabled: true },
-      { id: "paypal", label: "PayPal", sub: "justinalydiacuddles@gmail.com", detail: ["Email: justinalydiacuddles@gmail.com", "Friends & Family preferred (no fee)."], enabled: true, url: "mailto:justinalydiacuddles@gmail.com" },
+      { id: "paypal", label: "PayPal", sub: "paypal.me/JustinaLydia", detail: ["Friends & Family preferred (no fee)."], enabled: true, url: "https://www.paypal.com/paypalme/JustinaLydia" },
       { id: "wise", label: "Wise", sub: "wise.com/pay/me/justynaj102", detail: ["Open the pay link to send via Wise."], enabled: true, url: "https://wise.com/pay/me/justynaj102" },
       { id: "revolut", label: "Revolut or debit/credit card", sub: "@justynshx", detail: ["Pay @justynshx via Revolut, or with any debit/credit card on the same link."], enabled: true, url: "https://revolut.me/justynshx" },
       { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing", detail: ["Beneficiary: Justyna Janczyszyn", "Routing: 026073150", "Account: 822000215918"], enabled: true },
