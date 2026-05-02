@@ -27,6 +27,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate Convex types
+        run: npx convex codegen --typecheck=disable
+
       - run: npm run build
         env:
           VITE_CONVEX_URL: https://tough-meadowlark-233.convex.cloud
