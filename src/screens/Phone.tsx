@@ -119,7 +119,7 @@ export function PhoneScreen({
               <span style={{ color: "var(--muted)", fontSize: 10 }}>▾</span>
             </button>
             {ccOpen && (
-              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, width: 240, zIndex: 30, background: "#fff", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 12px 32px rgba(0,0,0,0.12)", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, width: "min(240px, calc(100vw - 32px))", zIndex: 30, background: "#fff", border: "1px solid var(--line)", borderRadius: 12, boxShadow: "0 12px 32px rgba(0,0,0,0.12)", overflow: "hidden" }}>
                 <input
                   autoFocus
                   value={ccQuery}

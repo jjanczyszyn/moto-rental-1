@@ -192,7 +192,7 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
   const mobile = useIsMobile();
 
   return (
-    <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", paddingBottom: 24 }}>
+    <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", overflowX: "hidden", paddingBottom: 24 }}>
       <div style={{ padding: "14px 20px 4px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src={assetUrl("assets/logo.png")} alt="Karen & JJ" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />

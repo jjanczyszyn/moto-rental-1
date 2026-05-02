@@ -152,7 +152,7 @@ export function ContractScreen({
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
       <StepHeader onBack={onBack} title="Sign the contract" step={6} total={7} />
       <ProgressBar step={6} total={7} />
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 16px" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 16px" }}>
         <div style={{ padding: 16, border: "1px solid var(--line)", borderRadius: 14, background: "#fafafa" }}>
           <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>Rental agreement</div>
           <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, marginBottom: 12 }}>Karen & JJ Moto Rental</div>

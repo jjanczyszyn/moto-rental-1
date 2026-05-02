@@ -95,7 +95,7 @@ export function CalendarScreen({
           <div style={pillValue}>{fmt(endDate)}</div>
         </div>
       </div>
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         {months.map(({ y, m }) => (
           <MonthGrid key={`${y}-${m}`} year={y} month={m} start={startDate} end={endDate} onPick={onPick} />
         ))}

@@ -82,7 +82,7 @@ export function OCRScreen({
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
       <StepHeader onBack={onBack} title="Verify your ID" step={3} total={7} />
       <ProgressBar step={3} total={7} />
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 100px" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 100px" }}>
         <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.5, margin: "8px 0 16px" }}>
           Upload a photo of your driver's license or passport. We'll fill in your details automatically.
         </p>

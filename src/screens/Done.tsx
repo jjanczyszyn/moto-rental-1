@@ -18,7 +18,7 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
   const hourLbl = hour == null ? "—" : hour === 12 ? "12:00 pm" : hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`;
 
   return (
-    <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", background: "#fff" }}>
+    <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", overflowX: "hidden", background: "#fff" }}>
       <div style={{ padding: "40px 24px 24px", textAlign: "center" }}>
         <div style={{
           width: 72, height: 72, borderRadius: "50%", background: "#0a0a0a", color: "#fff",

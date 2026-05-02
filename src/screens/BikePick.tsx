@@ -34,7 +34,7 @@ export function BikePickScreen({
       <div style={{ padding: "12px 16px 0", fontSize: 12.5, color: "var(--muted)" }}>
         {nights} {nights === 1 ? "day" : "days"} · {nights >= 30 ? "monthly rate applied" : nights >= 7 ? "weekly rate applied" : "daily rate"}
       </div>
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "12px 16px 100px" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "12px 16px 100px" }}>
         {bikes.map((b) => {
           const selected = state.bikeId === b._id;
           const total = computeTotal(nights, rates);

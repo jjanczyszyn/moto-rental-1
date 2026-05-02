@@ -23,7 +23,7 @@ export function PaymentScreen({
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
       <StepHeader onBack={onBack} title="How will you pay?" step={5} total={7} />
       <ProgressBar step={5} total={7} />
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 16px" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 16px" }}>
         <div style={{ marginTop: 8, marginBottom: 14, padding: 14, background: "#fafafa", borderRadius: 12, fontSize: 13, color: "var(--ink-2)", display: "flex", gap: 10, alignItems: "center" }}>
           <IconShield size={18} />
           <div>${config?.deposit ?? 100} deposit refunded on return.</div>

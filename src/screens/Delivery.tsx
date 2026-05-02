@@ -22,7 +22,7 @@ export function DeliveryScreen({
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
       <StepHeader onBack={onBack} title="Delivery time" step={7} total={7} />
       <ProgressBar step={7} total={7} />
-      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 16px" }}>
+      <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 16px" }}>
         <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.5, margin: "8px 0 16px" }}>
           We'll bring the moto to your address on{" "}
           <b>
