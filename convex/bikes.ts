@@ -37,7 +37,7 @@ const SEED = [
     name: "Genesis KLIK",
     color: "Red",
     type: "Electric" as const,
-    plate: "POP-217",
+    plate: "RI 50272",
     range: "70 km range",
     image: "assets/genesis-red.png",
     isActive: true,
@@ -47,7 +47,7 @@ const SEED = [
     name: "Genesis KLIK",
     color: "Blue",
     type: "Electric" as const,
-    plate: "POP-184",
+    plate: "RI 50273",
     range: "70 km range",
     image: "assets/genesis-blue.png",
     isActive: true,
@@ -57,7 +57,7 @@ const SEED = [
     name: "Yamaha XT 125",
     color: "White",
     type: "Gas" as const,
-    plate: "POP-302",
+    plate: "RI 46495",
     range: "125cc · 4-speed",
     image: "assets/yamaha-xt125.png",
     isActive: true,
@@ -86,5 +86,32 @@ export const setActive = mutation({
   args: { bikeId: v.id("bikes"), isActive: v.boolean() },
   handler: async (ctx, { bikeId, isActive }) => {
     await ctx.db.patch(bikeId, { isActive });
+  },
+});
+
+// Admin patch: update editable fields on a bike by slug. Used to roll a
+// dev-side edit forward to prod without going through the dashboard.
+export const patchBySlug = mutation({
+  args: {
+    slug: v.string(),
+    plate: v.optional(v.string()),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+    range: v.optional(v.string()),
+    image: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { slug, ...fields }) => {
+    const bike = await ctx.db
+      .query("bikes")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    if (!bike) throw new Error(`No bike with slug ${slug}`);
+    const patch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(fields)) {
+      if (v !== undefined) patch[k] = v;
+    }
+    await ctx.db.patch(bike._id, patch);
+    return bike._id;
   },
 });

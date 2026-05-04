@@ -35,9 +35,9 @@ export const all = mutation({
 
     // bikes
     const seedBikes = [
-      { slug: "genesis-red", name: "Genesis KLIK", color: "Red", type: "Electric" as const, plate: "POP-217", range: "70 km range", image: "assets/genesis-red.png", isActive: true },
-      { slug: "genesis-blue", name: "Genesis KLIK", color: "Blue", type: "Electric" as const, plate: "POP-184", range: "70 km range", image: "assets/genesis-blue.png", isActive: true },
-      { slug: "yamaha-xt", name: "Yamaha XT 125", color: "White", type: "Gas" as const, plate: "POP-302", range: "125cc · 4-speed", image: "assets/yamaha-xt125.png", isActive: true },
+      { slug: "genesis-red", name: "Genesis KLIK", color: "Red", type: "Electric" as const, plate: "RI 50272", range: "70 km range", image: "assets/genesis-red.png", isActive: true },
+      { slug: "genesis-blue", name: "Genesis KLIK", color: "Blue", type: "Electric" as const, plate: "RI 50273", range: "70 km range", image: "assets/genesis-blue.png", isActive: true },
+      { slug: "yamaha-xt", name: "Yamaha XT 125", color: "White", type: "Gas" as const, plate: "RI 46495", range: "125cc · 4-speed", image: "assets/yamaha-xt125.png", isActive: true },
     ];
     for (const b of seedBikes) {
       const existing = await ctx.db.query("bikes").withIndex("by_slug", (q) => q.eq("slug", b.slug)).first();
