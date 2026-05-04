@@ -54,7 +54,7 @@ export function DeliveryScreen({
           . Pick a time between {startHour}am and {endHour > 12 ? endHour - 12 : endHour}{endHour >= 12 ? "pm" : "am"}.
         </p>
 
-        <Field label="Delivery address" value={state.deliveryAddr} onChange={(v) => set({ deliveryAddr: v })} placeholder="Hotel, hostel, or pin" />
+        <Field label="Delivery address" value={state.deliveryAddr} onChange={(v) => set({ deliveryAddr: v })} placeholder="Accommodation name, Google Maps pin/link" />
 
         <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 0.6, textTransform: "uppercase", fontWeight: 600, margin: "6px 0 10px" }}>Pick a time</div>
         {isToday && minHour > startHour && (
