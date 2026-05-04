@@ -17,6 +17,8 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
   const isCash = r?.payMethod === "cash";
   const hour = r?.deliveryHour;
   const hourLbl = hour == null ? "—" : hour === 12 ? "12:00 pm" : hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`;
+  const deposit = config?.deposit ?? 100;
+  const amountToPay = (r?.totalUSD ?? 0) + deposit;
 
   return (
     <div className="phone-scroll" style={{ height: "100%", overflowY: "auto", overflowX: "hidden", background: "#fff" }}>
@@ -62,7 +64,10 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
                 </div>
               )}
               <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700 }}>
-                Amount: ${r.totalUSD}
+                Amount: ${amountToPay}
+                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500, marginLeft: 6 }}>
+                  (${r.totalUSD} rental + ${deposit} refundable deposit)
+                </span>
               </div>
               {payMethod.url && (
                 <a
@@ -101,9 +106,12 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
             <ContractRow l="Payment" v={payLabel} />
             <ContractRow l="WhatsApp" v={`${r.phoneCC} ${r.phoneNum}`} mono />
             <div style={{ height: 1, background: "#ececec", margin: "12px 0" }} />
+            <ContractRow l="Rental" v={`$${r.totalUSD}`} />
+            <ContractRow l="Refundable deposit" v={`$${deposit}`} />
+            <div style={{ height: 1, background: "#ececec", margin: "10px 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 13, color: "var(--muted)" }}>Total</span>
-              <span style={{ fontSize: 20, fontWeight: 700 }}>${r.totalUSD}</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Total to pay</span>
+              <span style={{ fontSize: 20, fontWeight: 700 }}>${amountToPay}</span>
             </div>
           </div>
 
