@@ -2,11 +2,8 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton } from "../components/Common";
-import { IconCash, IconBank, IconCheck, IconShield } from "../components/Icons";
-
-const ICONS: Record<string, React.ReactNode> = {
-  cash: <IconCash size={20} />,
-};
+import { IconCheck, IconShield } from "../components/Icons";
+import { PaymentIcon } from "../components/PaymentIcon";
 
 export function PaymentScreen({
   state, set, onBack, onNext,
@@ -48,7 +45,7 @@ export function PaymentScreen({
                 }}
               >
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {ICONS[m.id] ?? <IconBank size={20} />}
+                  <PaymentIcon id={m.id} size={22} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14.5, fontWeight: 600 }}>{m.label}</div>

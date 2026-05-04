@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { IconCheck, IconChat } from "../components/Icons";
 import { ContractRow } from "../components/Common";
+import { PaymentIcon } from "../components/PaymentIcon";
 
 export function DoneScreen({ code, onHome }: { code: string; onHome: () => void }) {
   const r = useQuery(api.reservations.byCode, { code });
@@ -46,7 +47,12 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
               <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>
                 {isCash ? "At delivery" : "How to pay"}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{payMethod.label}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#fff", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <PaymentIcon id={payMethod.id} size={22} />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{payMethod.label}</div>
+              </div>
               <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: isCash ? "inherit" : "JetBrains Mono, monospace", marginBottom: 10 }}>
                 {payMethod.sub}
               </div>
