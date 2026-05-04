@@ -2,6 +2,7 @@ import React from "react";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Common";
 import { countryNameToCC } from "../lib/countries";
+import { checkPhone } from "../lib/phone";
 
 const COUNTRY_CODES = [
   { code: "+505", name: "Nicaragua", flag: "🇳🇮" },
@@ -91,10 +92,11 @@ export function PhoneScreen({
       )
     : COUNTRY_CODES;
 
-  const digits = (state.phoneNum || "").replace(/\D/g, "");
-  const tooShort = digits.length > 0 && digits.length < 7;
+  const phone = checkPhone(state.phoneCC || "+505", state.phoneNum || "");
+  const hasDigits = (state.phoneNum || "").replace(/\D/g, "").length > 0;
+  const showInvalidWarning = hasDigits && !phone.isValid;
   const noteOk = (state.phoneNote || "").trim().length >= 10;
-  const ok = digits.length >= 7 || (tooShort && noteOk);
+  const ok = phone.isValid || (showInvalidWarning && noteOk);
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
@@ -162,14 +164,19 @@ export function PhoneScreen({
             />
           </div>
         </div>
-        {tooShort && (
+        {phone.isValid && phone.formatted && (
+          <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+            Sending to <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{phone.formatted}</span>
+          </div>
+        )}
+        {showInvalidWarning && (
           <div style={{ marginTop: 14, padding: 12, background: "#fff8f1", border: "1px solid #f5c89e", borderRadius: 12 }}>
             <div style={{ fontSize: 12.5, color: "#9a4a07", fontWeight: 600, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ display: "inline-flex", width: 16, height: 16, borderRadius: "50%", background: "#e0832a", color: "#fff", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>!</span>
-              That number looks short
+              That number doesn't look valid
             </div>
             <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5, marginBottom: 10 }}>
-              A WhatsApp number is usually 7+ digits. If yours really is shorter, leave a quick note explaining and we'll review it before delivery.
+              We couldn't validate this number for {state.phoneCC || "+505"}. If you're sure it's correct, leave a quick note explaining and we'll review it before delivery.
             </div>
             <textarea
               value={state.phoneNote || ""}
