@@ -157,7 +157,13 @@ export function OCRScreen({
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
         <PrimaryButton
-          disabled={!state.docFirstName || !state.docLastName}
+          disabled={
+            !state.docFirstName.trim() ||
+            !state.docLastName.trim() ||
+            !state.docNumber.trim() ||
+            !state.docExpiry.trim() ||
+            !state.docCountry.trim()
+          }
           onClick={onNext}
         >
           Continue
