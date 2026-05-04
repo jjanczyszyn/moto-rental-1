@@ -123,7 +123,7 @@ function ReviewsList({ reviews, mobile }: { reviews: Review[]; mobile: boolean }
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, padding: "0 20px" }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: 1.2, color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>Reviews</div>
-          <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>5.0 · {reviews.length * 7} riders</div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>5.0</div>
         </div>
         <StarsRow size={15} />
       </div>
