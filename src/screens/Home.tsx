@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { IconArrowRight, IconChat, IconMap, IconStar } from "../components/Icons";
-import { BikeIllustration, bikeStyle, BikeRow } from "../components/BikeIllustration";
+import { BikeIllustration, bikeStyle, transmissionLabel, BikeRow } from "../components/BikeIllustration";
 import { StarsRow } from "../components/Common";
 import { assetUrl } from "../lib/assets";
 
@@ -173,7 +173,7 @@ function MotoMiniCard({ b, price, mobile }: { b: BikeRow; price: number; mobile:
         <div style={{ fontSize: 14, fontWeight: 600 }}>
           {b.name} <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {b.color}</span>
         </div>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{b.type} · {b.range}</div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{transmissionLabel(b.type)}</div>
         <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600 }}>
           ${price}<span style={{ color: "var(--muted)", fontWeight: 400 }}> /day</span>
         </div>

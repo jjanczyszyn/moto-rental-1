@@ -24,6 +24,12 @@ export function bikeStyle(slug: string) {
   return STYLE_BY_SLUG[slug] ?? { accent: "#ff5a3c", body: "#1a1a1a", seat: "#1a1a1a" };
 }
 
+// Customer-facing transmission label, derived from the engine type. Electric
+// bikes are twist-and-go (automatic); the gas Yamaha has gears (manual).
+export function transmissionLabel(type: BikeRow["type"]): string {
+  return type === "Electric" ? "Automatic" : "Manual";
+}
+
 export function BikeIllustration({
   accent = "#ff5a3c",
   seat = "#1a1a1a",

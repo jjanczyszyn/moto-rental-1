@@ -2,7 +2,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { ReservationDraft, toISODate } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, daysBetween } from "../components/Common";
-import { BikeIllustration, bikeStyle, BikeRow } from "../components/BikeIllustration";
+import { BikeIllustration, bikeStyle, transmissionLabel, BikeRow } from "../components/BikeIllustration";
 import { IconCheck } from "../components/Icons";
 import { computeTotal } from "../lib/pricing";
 
@@ -66,7 +66,7 @@ export function BikePickScreen({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>{b.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{b.color} · {b.type} · {b.range}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{b.color} · {transmissionLabel(b.type)}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>
