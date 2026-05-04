@@ -178,10 +178,10 @@ export function ContractScreen({
           </div>
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: "var(--ink-2)", lineHeight: 1.55 }}>
             <li><b>Vehicle.</b> The Owner (Karen & JJ Moto Rental) rents the above motorcycle to the Renter for the dates listed. The motorcycle is delivered with a surf rack, two helmets and roadside assistance during business hours.</li>
-            <li><b>Renter's responsibility.</b> The Renter accepts the motorcycle in good working condition and agrees to return it in the same condition, less normal wear. The Renter is the sole responsible operator and must hold a valid driver's license.</li>
+            <li><b>Renter's responsibility.</b> The Renter accepts the motorcycle in good working condition and agrees to return it in the same condition. The Renter is the sole responsible operator and must hold a valid driver's license.</li>
             <li><b>Damage.</b> The Renter is responsible for any and all damage to the motorcycle, accessories or third-party property occurring during the rental period, regardless of cause or fault. The Renter agrees to compensate the Owner for the full cost of repairs.</li>
             <li><b>Loss or theft.</b> In the event of loss or theft of the motorcycle, helmets, surf rack or keys during the rental period, the Renter agrees to compensate the Owner for the <b>full market replacement value</b> of the motorcycle and any missing accessories, payable within 14 days of the incident.</li>
-            <li><b>Use.</b> The motorcycle may not be ridden by anyone other than the Renter, used for racing, off-road stunts, illegal activity, or operated under the influence of alcohol or drugs.</li>
+            <li><b>Use.</b> The motorcycle may not be used for illegal activity or operated under the influence of alcohol or drugs.</li>
             <li><b>Insurance.</b> The motorcycle carries Nicaraguan third-party liability insurance only. Personal injury, medical expenses and damage to the motorcycle itself are <b>not</b> covered.</li>
             <li><b>Helmets.</b> Helmets must be worn at all times by both rider and passenger.</li>
             <li><b>Deposit.</b> A refundable deposit of <b>${config?.deposit ?? 100} USD</b> is held at delivery and returned in full upon return.</li>
