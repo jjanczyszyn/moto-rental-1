@@ -4,6 +4,24 @@ import { IconCheck, IconChat } from "../components/Icons";
 import { ContractRow } from "../components/Common";
 import { PaymentIcon } from "../components/PaymentIcon";
 
+function buildKarenMessage({
+  code, date, hour, address, isCash,
+}: {
+  code: string;
+  date: string;
+  hour: string;
+  address: string;
+  isCash: boolean;
+}): string {
+  const parts = [
+    `Hi Karen, I just booked ${code}.`,
+    `Delivery on ${date} at ${hour} to ${address}.`,
+  ];
+  if (!isCash) parts.push("I'm sending the payment screenshot.");
+  parts.push("Waiting for your confirmation!");
+  return parts.join(" ");
+}
+
 export function DoneScreen({ code, onHome }: { code: string; onHome: () => void }) {
   const r = useQuery(api.reservations.byCode, { code });
   const fmt = (iso?: string) => {
@@ -117,11 +135,13 @@ export function DoneScreen({ code, onHome }: { code: string; onHome: () => void 
 
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <a
-              href={`https://wa.me/50589750052?text=${encodeURIComponent(
-                isCash
-                  ? `Hi Karen, I just booked ${code}. See you at delivery.`
-                  : `Hi Karen, I just booked ${code} and I'm sending the payment screenshot.`
-              )}`}
+              href={`https://wa.me/50589750052?text=${encodeURIComponent(buildKarenMessage({
+                code,
+                date: fmt(r.startDate),
+                hour: hourLbl,
+                address: r.deliveryAddr || "—",
+                isCash,
+              }))}`}
               target="_blank"
               rel="noreferrer"
               style={{
