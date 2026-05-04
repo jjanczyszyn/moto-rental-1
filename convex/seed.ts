@@ -11,7 +11,9 @@ export const all = mutation({
       { id: "zelle", label: "Zelle", sub: "6469340781", detail: ["Phone: 646 934 0781", "Recipient: Justyna Janczyszyn"], enabled: true },
       { id: "paypal", label: "PayPal", sub: "paypal.me/JustinaLydia", detail: ["Friends & Family preferred (no fee)."], enabled: true, url: "https://www.paypal.com/paypalme/JustinaLydia" },
       { id: "wise", label: "Wise", sub: "wise.com/pay/me/justynaj102", detail: ["Open the pay link to send via Wise."], enabled: true, url: "https://wise.com/pay/me/justynaj102" },
-      { id: "revolut", label: "Revolut or debit/credit card", sub: "@justynshx", detail: ["Pay @justynshx via Revolut, or with any debit/credit card on the same link."], enabled: true, url: "https://revolut.me/justynshx" },
+      { id: "revolut", label: "Revolut", sub: "@justynshx", detail: ["Send to @justynshx via Revolut."], enabled: true, url: "https://revolut.me/justynshx" },
+      { id: "card", label: "Debit/credit card", sub: "Any Visa or Mastercard", detail: ["Pay with any debit or credit card on the hosted Revolut page — no account needed."], enabled: true, url: "https://revolut.me/justynshx" },
+      { id: "applepay", label: "Apple Pay", sub: "One tap on iPhone", detail: ["Tap Apple Pay on the hosted Revolut page."], enabled: true, url: "https://revolut.me/justynshx" },
       { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing", detail: ["Beneficiary: Justyna Janczyszyn", "Routing: 026073150", "Account: 822000215918"], enabled: true },
       { id: "transfer-eur", label: "Bank transfer · EUR", sub: "IBAN (Belgium)", detail: ["Beneficiary: Justyna Janczyszyn", "IBAN: BE06 9671 9692 5322"], enabled: true },
     ];
