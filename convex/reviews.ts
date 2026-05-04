@@ -13,9 +13,10 @@ export const fiveStar = query({
     const all = await ctx.db
       .query("reviews")
       .withIndex("by_rating", (q) => q.eq("rating", 5))
-      .order("desc")
-      .take(20);
-    return all;
+      .collect();
+    // Sort by fetchedAt desc — newest reviews surface first regardless of
+    // when they were inserted into the DB.
+    return all.sort((a, b) => b.fetchedAt - a.fetchedAt).slice(0, 20);
   },
 });
 
