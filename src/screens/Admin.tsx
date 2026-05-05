@@ -170,7 +170,18 @@ export function AdminScreen() {
   const [monthIdx0, setMonthIdx0] = React.useState(today.getMonth());
   const mobile = useIsMobile();
 
-  if (!authed || !token) return <LoginGate onSubmit={tryPassword} />;
+  if (!authed || !token) {
+    // Mirror the scroll-container treatment so the gate is centred and
+    // scrollable on short viewports.
+    return (
+      <div style={{
+        height: "100dvh", overflowY: "auto", overflowX: "hidden",
+        WebkitOverflowScrolling: "touch", background: "#fff",
+      }}>
+        <LoginGate onSubmit={tryPassword} />
+      </div>
+    );
+  }
 
   const sectionProps = { year, monthIdx0, setYear, setMonth: setMonthIdx0 };
   let inner: React.ReactNode;
@@ -196,12 +207,24 @@ export function AdminScreen() {
   const username = (session && session.ok && session.username) ? session.username : null;
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#fafafa", paddingBottom: 60 }}>
+    // index.html locks <body> to overflow:hidden + 100dvh for the fullscreen
+    // customer flow. The admin panel is a normal long-scroll page, so we
+    // force this container to be the scroll context: full viewport height
+    // with internal overflow-y auto + iOS momentum scrolling.
+    <div style={{
+      height: "100dvh",
+      overflowY: "auto",
+      overflowX: "hidden",
+      WebkitOverflowScrolling: "touch",
+      background: "#fafafa",
+      paddingBottom: 60,
+    }}>
       <header style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: mobile ? "12px 16px" : "16px 24px",
         borderBottom: "1px solid var(--line)",
         background: "#fff", flexWrap: "wrap", gap: 12,
+        position: "sticky", top: 0, zIndex: 10,
       }}>
         <div>
           <div style={{ fontSize: mobile ? 18 : 22, fontWeight: 700 }}>Karen & JJ Admin</div>
@@ -227,6 +250,7 @@ export function AdminScreen() {
         borderBottom: "1px solid var(--line)", background: "#fff",
         overflowX: "auto", whiteSpace: "nowrap",
         WebkitOverflowScrolling: "touch",
+        position: "sticky", top: mobile ? 56 : 70, zIndex: 9,
       }}>
         {TABS.map((t) => (
           <button
