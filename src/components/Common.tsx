@@ -1,5 +1,6 @@
 import React from "react";
 import { IconChevronLeft } from "./Icons";
+import { useI18n } from "../i18n/I18nContext";
 
 export function StepHeader({
   onBack,
@@ -12,6 +13,7 @@ export function StepHeader({
   step?: number;
   total?: number;
 }) {
+  const { t } = useI18n();
   return (
     <div style={{ padding: "12px 16px 8px", display: "flex", alignItems: "center", gap: 8 }}>
       <button onClick={onBack} style={{
@@ -21,7 +23,7 @@ export function StepHeader({
       <div style={{ flex: 1 }}>
         {step != null && (
           <div style={{ fontSize: 10.5, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
-            Step {step} of {total}
+            {t("common.step", { n: step, total: total ?? 0 })}
           </div>
         )}
         <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2 }}>{title}</div>

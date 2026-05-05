@@ -4,6 +4,7 @@ import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton } from "../components/Common";
 import { IconCheck, IconShield } from "../components/Icons";
 import { PaymentIcon } from "../components/PaymentIcon";
+import { useI18n } from "../i18n/I18nContext";
 
 export function PaymentScreen({
   state, set, onBack, onNext,
@@ -13,17 +14,18 @@ export function PaymentScreen({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { t } = useI18n();
   const config = useQuery(api.config.get);
   const methods = (config?.paymentMethods ?? []).filter((m) => m.enabled);
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-      <StepHeader onBack={onBack} title="How will you pay?" step={5} total={7} />
+      <StepHeader onBack={onBack} title={t("payment.title")} step={5} total={7} />
       <ProgressBar step={5} total={7} />
       <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 16px" }}>
         <div style={{ marginTop: 8, marginBottom: 14, padding: 14, background: "#fafafa", borderRadius: 12, fontSize: 13, color: "var(--ink-2)", display: "flex", gap: 10, alignItems: "center" }}>
           <IconShield size={18} />
-          <div>${config?.deposit ?? 100} deposit refunded on return.</div>
+          <div>{t("payment.depositNote", { deposit: config?.deposit ?? 100 })}</div>
         </div>
         {methods.map((m) => {
           const selected = state.payMethod === m.id;
@@ -75,7 +77,7 @@ export function PaymentScreen({
                         fontFamily: "Inter Tight, -apple-system, system-ui, sans-serif",
                       }}
                     >
-                      Open {m.label} →
+                      {t("payment.openMethod", { label: m.label })}
                     </a>
                   )}
                 </div>
@@ -85,7 +87,7 @@ export function PaymentScreen({
         })}
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
-        <PrimaryButton disabled={!state.payMethod} onClick={onNext}>Continue</PrimaryButton>
+        <PrimaryButton disabled={!state.payMethod} onClick={onNext}>{t("common.continue")}</PrimaryButton>
       </div>
     </div>
   );

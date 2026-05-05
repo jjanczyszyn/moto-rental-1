@@ -4,6 +4,8 @@ import { api } from "../../convex/_generated/api";
 import { IconArrowRight, IconChat, IconMap, IconStar } from "../components/Icons";
 import { BikeIllustration, bikeStyle, transmissionLabel, BikeRow } from "../components/BikeIllustration";
 import { StarsRow } from "../components/Common";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
+import { useI18n } from "../i18n/I18nContext";
 import { assetUrl } from "../lib/assets";
 
 type Review = {
@@ -28,6 +30,7 @@ function useIsMobile(): boolean {
 }
 
 function ReviewCard({ r, mobile }: { r: Review; mobile: boolean }) {
+  const { t } = useI18n();
   return (
     <div style={{
       // Mobile: 86% of viewport width, snap-centred — original carousel feel.
@@ -59,7 +62,7 @@ function ReviewCard({ r, mobile }: { r: Review; mobile: boolean }) {
         <StarsRow />
       </div>
       <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, color: "var(--ink-2)" }}>{r.text}</p>
-      <div style={{ fontSize: 10.5, color: "var(--muted)", letterSpacing: 0.4, textTransform: "uppercase" }}>via Google reviews</div>
+      <div style={{ fontSize: 10.5, color: "var(--muted)", letterSpacing: 0.4, textTransform: "uppercase" }}>{t("home.reviewsSource")}</div>
     </div>
   );
 }
@@ -117,12 +120,13 @@ function ReviewsRow({ reviews }: { reviews: Review[] }) {
 }
 
 function ReviewsList({ reviews, mobile }: { reviews: Review[]; mobile: boolean }) {
+  const { t } = useI18n();
   if (!reviews.length) return null;
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, padding: "0 20px" }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.2, color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>Reviews</div>
+          <div style={{ fontSize: 11, letterSpacing: 1.2, color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>{t("home.reviews")}</div>
           <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>5.0</div>
         </div>
         <StarsRow size={15} />
@@ -133,10 +137,11 @@ function ReviewsList({ reviews, mobile }: { reviews: Review[]; mobile: boolean }
 }
 
 function FeatureRow() {
+  const { t } = useI18n();
   const items = [
-    { emoji: "🏄", label: "Surf rack" },
-    { image: assetUrl("assets/helmet.png"), label: "2 helmets" },
-    { emoji: "🏍️", label: "Doorstep delivery" },
+    { emoji: "🏄", label: t("home.feature.surfRack") },
+    { image: assetUrl("assets/helmet.png"), label: t("home.feature.helmets") },
+    { emoji: "🏍️", label: t("home.feature.delivery") },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, padding: "0 20px" }}>
@@ -157,6 +162,7 @@ function FeatureRow() {
 }
 
 function MotoMiniCard({ b, price, mobile }: { b: BikeRow; price: number; mobile: boolean }) {
+  const { t } = useI18n();
   const s = bikeStyle(b.slug);
   return (
     <div style={{
@@ -175,7 +181,7 @@ function MotoMiniCard({ b, price, mobile }: { b: BikeRow; price: number; mobile:
         </div>
         <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{transmissionLabel(b.type)}</div>
         <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600 }}>
-          ${price}<span style={{ color: "var(--muted)", fontWeight: 400 }}> /day</span>
+          ${price}<span style={{ color: "var(--muted)", fontWeight: 400 }}> {t("home.perDay")}</span>
         </div>
       </div>
     </div>
@@ -183,6 +189,7 @@ function MotoMiniCard({ b, price, mobile }: { b: BikeRow; price: number; mobile:
 }
 
 export function HomeScreen({ onStart }: { onStart: () => void }) {
+  const { t } = useI18n();
   const config = useQuery(api.config.get);
   const bikes = (useQuery(api.bikes.list) ?? []) as BikeRow[];
   const reviews = (useQuery(api.reviews.fiveStar) ?? []) as Review[];
@@ -198,23 +205,26 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
           <img src={assetUrl("assets/logo.png")} alt="Karen & JJ" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
           <div>
             <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.1 }}>Karen & JJ</div>
-            <div style={{ fontSize: 11, color: "var(--muted)" }}>Moto Rental · Popoyo</div>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("home.tagline")}</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", background: "#fafafa", borderRadius: 999, border: "1px solid var(--line)" }}>
-          <IconStar size={11} />
-          <span style={{ fontSize: 11.5, fontWeight: 600 }}>5.0</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <LocaleSwitcher />
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", background: "#fafafa", borderRadius: 999, border: "1px solid var(--line)" }}>
+            <IconStar size={11} />
+            <span style={{ fontSize: 11.5, fontWeight: 600 }}>5.0</span>
+          </div>
         </div>
       </div>
 
       <div style={{ padding: "12px 16px 0", display: "flex", gap: 10 }}>
         <a href="https://wa.me/50589750052" target="_blank" rel="noreferrer" style={footerLinkStyle("#25D366")}>
           <IconChat size={18} color="#fff" />
-          <span>WhatsApp</span>
+          <span>{t("home.whatsapp")}</span>
         </a>
         <a href="https://share.google/IXOC6DlEv7Zk9d18W" target="_blank" rel="noreferrer" style={footerLinkStyle("#1a73e8")}>
           <IconMap size={18} color="#fff" />
-          <span>Find us</span>
+          <span>{t("home.findUs")}</span>
         </a>
       </div>
 
@@ -223,9 +233,9 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
       </div>
 
       <div style={{ padding: "14px 20px 0", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-        <div style={pricePillStyle}><b>${dailyRate}</b> /day</div>
-        <div style={pricePillStyle}><b>${weeklyRate}</b> /week</div>
-        <div style={pricePillStyle}><b>${monthlyRate}</b> /month</div>
+        <div style={pricePillStyle}><b>${dailyRate}</b> {t("home.perDay")}</div>
+        <div style={pricePillStyle}><b>${weeklyRate}</b> {t("home.perWeek")}</div>
+        <div style={pricePillStyle}><b>${monthlyRate}</b> {t("home.perMonth")}</div>
       </div>
 
       <div style={{ padding: "24px 0 0" }}>
@@ -255,7 +265,7 @@ export function HomeScreen({ onStart }: { onStart: () => void }) {
           boxShadow: "0 12px 32px rgba(37,211,102,0.32)", display: "inline-flex",
           alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer",
         }}>
-          Rent a motorcycle <IconArrowRight size={18} color="#fff" />
+          {t("home.rentCta")} <IconArrowRight size={18} color="#fff" />
         </button>
       </div>
 

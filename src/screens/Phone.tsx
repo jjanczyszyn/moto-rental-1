@@ -3,6 +3,7 @@ import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, Field } from "../components/Common";
 import { countryNameToCC } from "../lib/countries";
 import { checkPhone } from "../lib/phone";
+import { useI18n } from "../i18n/I18nContext";
 
 const COUNTRY_CODES = [
   { code: "+505", name: "Nicaragua", flag: "🇳🇮" },
@@ -59,6 +60,7 @@ export function PhoneScreen({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { t } = useI18n();
   const [ccOpen, setCcOpen] = React.useState(false);
   const [ccQuery, setCcQuery] = React.useState("");
   const wrapRef = React.useRef<HTMLDivElement>(null);
@@ -100,15 +102,15 @@ export function PhoneScreen({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-      <StepHeader onBack={onBack} title="Your WhatsApp number" step={4} total={7} />
+      <StepHeader onBack={onBack} title={t("phone.title")} step={4} total={7} />
       <ProgressBar step={4} total={7} />
       <div style={{ flex: 1, padding: "8px 16px" }}>
         <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.5, margin: "8px 0 18px" }}>
-          We'll send your contract, delivery details and roadside support over WhatsApp.
+          {t("phone.intro")}
         </p>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <div ref={wrapRef} style={{ position: "relative", flex: "0 0 110px" }}>
-            <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 0.6, textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>Code</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 0.6, textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>{t("phone.code")}</div>
             <button type="button" onClick={() => { setCcOpen(o => !o); setCcQuery(""); }} style={{
               width: "100%", padding: "13px 10px", borderRadius: 12, border: "1px solid var(--line)",
               background: "#fff", cursor: "pointer", display: "flex", alignItems: "center",
@@ -126,7 +128,7 @@ export function PhoneScreen({
                   autoFocus
                   value={ccQuery}
                   onChange={(e) => setCcQuery(e.target.value)}
-                  placeholder="Search code or country"
+                  placeholder={t("phone.searchPlaceholder")}
                   style={{ width: "100%", padding: "12px 12px", border: "none", borderBottom: "1px solid var(--line)", outline: "none", fontSize: 13, fontFamily: "inherit" }}
                 />
                 <div style={{ maxHeight: 240, overflowY: "auto" }}>
@@ -146,7 +148,7 @@ export function PhoneScreen({
                     </button>
                   ))}
                   {filtered.length === 0 && (
-                    <div style={{ padding: "12px", fontSize: 12, color: "var(--muted)", textAlign: "center" }}>No match</div>
+                    <div style={{ padding: "12px", fontSize: 12, color: "var(--muted)", textAlign: "center" }}>{t("phone.noMatch")}</div>
                   )}
                 </div>
               </div>
@@ -154,7 +156,7 @@ export function PhoneScreen({
           </div>
           <div style={{ flex: 1 }}>
             <Field
-              label="Phone number"
+              label={t("phone.number")}
               value={state.phoneNum}
               onChange={(v) => set({ phoneNum: v.replace(/[^0-9 ]/g, "") })}
               mono
@@ -166,22 +168,22 @@ export function PhoneScreen({
         </div>
         {phone.isValid && phone.formatted && (
           <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-            Sending to <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{phone.formatted}</span>
+            {t("phone.sendingTo")} <span style={{ fontFamily: "JetBrains Mono, monospace" }}>{phone.formatted}</span>
           </div>
         )}
         {showInvalidWarning && (
           <div style={{ marginTop: 14, padding: 12, background: "#fff8f1", border: "1px solid #f5c89e", borderRadius: 12 }}>
             <div style={{ fontSize: 12.5, color: "#9a4a07", fontWeight: 600, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ display: "inline-flex", width: 16, height: 16, borderRadius: "50%", background: "#e0832a", color: "#fff", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>!</span>
-              That number doesn't look valid
+              {t("phone.invalidTitle")}
             </div>
             <div style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5, marginBottom: 10 }}>
-              We couldn't validate this number for {state.phoneCC || "+505"}. If you're sure it's correct, leave a quick note explaining and we'll review it before delivery.
+              {t("phone.invalidBody", { cc: state.phoneCC || "+505" })}
             </div>
             <textarea
               value={state.phoneNote || ""}
               onChange={(e) => set({ phoneNote: e.target.value })}
-              placeholder="e.g. short business line, alternate WhatsApp on +505 1234"
+              placeholder={t("phone.notePlaceholder")}
               rows={3}
               style={{
                 width: "100%", resize: "vertical", minHeight: 64,
@@ -193,7 +195,7 @@ export function PhoneScreen({
         )}
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
-        <PrimaryButton disabled={!ok} onClick={onNext}>Continue</PrimaryButton>
+        <PrimaryButton disabled={!ok} onClick={onNext}>{t("common.continue")}</PrimaryButton>
       </div>
     </div>
   );

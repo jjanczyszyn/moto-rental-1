@@ -7,6 +7,7 @@ import { ExpiryField } from "../components/ExpiryField";
 import { CountrySelect } from "../components/CountrySelect";
 import { IconCheck, IconUpload, IconRefresh } from "../components/Icons";
 import { parseDocumentText } from "../lib/ocrParse";
+import { useI18n } from "../i18n/I18nContext";
 
 type Phase = "idle" | "scanning" | "manual" | "done";
 
@@ -24,6 +25,7 @@ export function OCRScreen({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { t } = useI18n();
   const [phase, setPhase] = React.useState<Phase>(state.docFirstName ? "done" : "idle");
   const [progress, setProgress] = React.useState(0);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -83,11 +85,11 @@ export function OCRScreen({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-      <StepHeader onBack={onBack} title="Verify your ID" step={3} total={7} />
+      <StepHeader onBack={onBack} title={t("ocr.title")} step={3} total={7} />
       <ProgressBar step={3} total={7} />
       <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 100px" }}>
         <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.5, margin: "8px 0 16px" }}>
-          Upload a photo of your driver's license or passport. We'll fill in your details automatically.
+          {t("ocr.intro")}
         </p>
 
         {phase === "idle" && (
@@ -95,8 +97,8 @@ export function OCRScreen({
             <div style={{ width: 56, height: 56, borderRadius: 16, background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--line)" }}>
               <IconUpload size={26} />
             </div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>Upload document photo</div>
-            <div style={{ fontSize: 12, color: "var(--muted)" }}>JPG, PNG or HEIC · max 8 MB</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{t("ocr.uploadCta")}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>{t("ocr.uploadHint")}</div>
           </button>
         )}
 
@@ -110,11 +112,11 @@ export function OCRScreen({
                 animation: "scan 1.6s ease-in-out infinite",
               }} />
               <div style={{ position: "absolute", top: 8, left: 8, color: "#fff", fontSize: 10, fontFamily: "JetBrains Mono, monospace", opacity: 0.7 }}>
-                SCANNING… {progress}%
+                {t("ocr.scanning")} {progress}%
               </div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Reading your document</div>
-            <div style={{ fontSize: 12, color: "var(--muted)" }}>This can take ~30 seconds the first time</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{t("ocr.reading")}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>{t("ocr.readingHint")}</div>
             <style>{`@keyframes scan { 0% { top: 4%; } 50% { top: 92%; } 100% { top: 4%; } }`}</style>
           </div>
         )}
@@ -122,11 +124,11 @@ export function OCRScreen({
         {phase === "manual" && (
           <div>
             <div style={{ padding: 12, background: "#fff8f1", border: "1px solid #f5c89e", borderRadius: 12, marginBottom: 14, fontSize: 12.5, color: "#9a4a07" }}>
-              We couldn't read your document automatically. Please fill in the fields below — we'll double-check at delivery.
+              {t("ocr.manualHint")}
             </div>
-            <Field label="First name" value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
-            <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
-            <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
+            <Field label={t("ocr.firstName")} value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
+            <Field label={t("ocr.lastName")} value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
+            <Field label={t("ocr.docNumber")} value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
             <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
             <CountrySelect value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
           </div>
@@ -135,11 +137,11 @@ export function OCRScreen({
         {phase === "done" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#16a34a", fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-              <IconCheck size={18} color="#16a34a" /> Extracted from your document
+              <IconCheck size={18} color="#16a34a" /> {t("ocr.extracted")}
             </div>
-            <Field label="First name" value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
-            <Field label="Last name(s)" value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
-            <Field label="Document number" value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
+            <Field label={t("ocr.firstName")} value={state.docFirstName} onChange={(v) => set({ docFirstName: v })} />
+            <Field label={t("ocr.lastName")} value={state.docLastName} onChange={(v) => set({ docLastName: v })} />
+            <Field label={t("ocr.docNumber")} value={state.docNumber} onChange={(v) => set({ docNumber: v })} mono />
             <ExpiryField iso={state.docExpiry} onIsoChange={(v) => set({ docExpiry: v })} />
             <CountrySelect value={state.docCountry} onChange={(v) => set({ docCountry: v })} />
             <button
@@ -152,7 +154,7 @@ export function OCRScreen({
                 fontSize: 12, padding: 6, display: "inline-flex", alignItems: "center", gap: 6,
               }}
             >
-              <IconRefresh size={13} /> Re-scan document
+              <IconRefresh size={13} /> {t("ocr.rescan")}
             </button>
           </div>
         )}
@@ -169,7 +171,7 @@ export function OCRScreen({
           }
           onClick={onNext}
         >
-          Continue
+          {t("common.continue")}
         </PrimaryButton>
       </div>
     </div>

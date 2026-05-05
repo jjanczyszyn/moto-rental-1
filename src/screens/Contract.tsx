@@ -5,6 +5,7 @@ import { ReservationDraft, SignatureDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, ContractRow, daysBetween } from "../components/Common";
 import { BikeRow } from "../components/BikeIllustration";
 import { computeTotal } from "../lib/pricing";
+import { useI18n } from "../i18n/I18nContext";
 
 function tabStyle(active: boolean): React.CSSProperties {
   return {
@@ -22,6 +23,7 @@ function SignaturePad({
   value: SignatureDraft | null;
   onChange: (s: SignatureDraft) => void;
 }) {
+  const { t } = useI18n();
   const [mode, setMode] = React.useState<"draw" | "type">(value?.mode === "type" ? "type" : "draw");
   const [typed, setTyped] = React.useState(value?.typed || "");
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -83,8 +85,8 @@ function SignaturePad({
   return (
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 10, padding: 4, background: "#f4f4f4", borderRadius: 10 }}>
-        <button onClick={() => setMode("draw")} style={tabStyle(mode === "draw")}>Draw</button>
-        <button onClick={() => setMode("type")} style={tabStyle(mode === "type")}>Type</button>
+        <button onClick={() => setMode("draw")} style={tabStyle(mode === "draw")}>{t("contract.tab.draw")}</button>
+        <button onClick={() => setMode("type")} style={tabStyle(mode === "type")}>{t("contract.tab.type")}</button>
       </div>
       {mode === "draw" ? (
         <div>
@@ -100,23 +102,23 @@ function SignaturePad({
               onTouchMove={move}
               onTouchEnd={end}
             />
-            <div style={{ position: "absolute", left: 14, bottom: 8, fontSize: 10, color: "#bbb", letterSpacing: 1, textTransform: "uppercase" }}>Sign here ×</div>
+            <div style={{ position: "absolute", left: 14, bottom: 8, fontSize: 10, color: "#bbb", letterSpacing: 1, textTransform: "uppercase" }}>{t("contract.signHere")}</div>
           </div>
-          <button onClick={clear} style={{ background: "transparent", border: "none", color: "var(--muted)", fontSize: 12, padding: "6px 0" }}>Clear</button>
+          <button onClick={clear} style={{ background: "transparent", border: "none", color: "var(--muted)", fontSize: 12, padding: "6px 0" }}>{t("contract.clear")}</button>
         </div>
       ) : (
         <div>
           <input
             value={typed}
             onChange={(e) => { setTyped(e.target.value); onChange({ mode: "type", typed: e.target.value }); }}
-            placeholder="Type your full name"
+            placeholder={t("contract.typePlaceholder")}
             style={{
               width: "100%", padding: "14px 14px", borderRadius: 12, border: "1px solid var(--line)",
               fontSize: 22, fontFamily: "Caveat, cursive", outline: "none", background: "#fff",
             }}
           />
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
-            By typing your name you agree it represents your handwritten signature.
+            {t("contract.typeAcknowledgement")}
           </div>
         </div>
       )}
@@ -132,10 +134,11 @@ export function ContractScreen({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { t, intlLocale } = useI18n();
   const bikes = (useQuery(api.bikes.list) ?? []) as BikeRow[];
   const config = useQuery(api.config.get);
   const bike = bikes.find((b) => b._id === state.bikeId);
-  const fmt = (d: Date | null) => (d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—");
+  const fmt = (d: Date | null) => (d ? d.toLocaleDateString(intlLocale, { month: "short", day: "numeric", year: "numeric" }) : "—");
   const sigOk = !!(state.signature && (state.signature.drawn || (state.signature.typed && state.signature.typed.length >= 3)));
   const nights = daysBetween(state.startDate, state.endDate);
   const phoneCC = state.phoneCC || "+505";
@@ -150,53 +153,53 @@ export function ContractScreen({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-      <StepHeader onBack={onBack} title="Sign the contract" step={6} total={7} />
+      <StepHeader onBack={onBack} title={t("contract.title")} step={6} total={7} />
       <ProgressBar step={6} total={7} />
       <div className="phone-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 16px 16px" }}>
         <div style={{ padding: 16, border: "1px solid var(--line)", borderRadius: 14, background: "#fafafa" }}>
-          <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>Rental agreement</div>
-          <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, marginBottom: 12 }}>Karen & JJ Moto Rental</div>
-          <ContractRow l="Renter" v={`${state.docFirstName || "—"} ${state.docLastName || ""}`} />
-          <ContractRow l="Document" v={state.docNumber || "—"} mono />
-          <ContractRow l="Country" v={state.docCountry || "—"} />
-          <ContractRow l="Moto" v={bike ? `${bike.name} · ${bike.color}` : "—"} />
-          <ContractRow l="Registration" v={bike?.plate || "—"} mono />
-          <ContractRow l="Pick-up" v={fmt(state.startDate)} />
-          <ContractRow l="Drop-off" v={fmt(state.endDate)} />
-          <ContractRow l="Duration" v={nights ? `${nights} ${nights === 1 ? "day" : "days"}` : "—"} />
-          <ContractRow l="Payment" v={payMethod} />
-          <ContractRow l="WhatsApp" v={`${phoneCC} ${state.phoneNum || "—"}`} mono />
+          <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>{t("contract.headline")}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, marginBottom: 12 }}>{t("contract.brand")}</div>
+          <ContractRow l={t("contract.row.renter")} v={`${state.docFirstName || "—"} ${state.docLastName || ""}`} />
+          <ContractRow l={t("contract.row.document")} v={state.docNumber || "—"} mono />
+          <ContractRow l={t("contract.row.country")} v={state.docCountry || "—"} />
+          <ContractRow l={t("contract.row.moto")} v={bike ? `${bike.name} · ${bike.color}` : "—"} />
+          <ContractRow l={t("contract.row.registration")} v={bike?.plate || "—"} mono />
+          <ContractRow l={t("contract.row.pickup")} v={fmt(state.startDate)} />
+          <ContractRow l={t("contract.row.dropoff")} v={fmt(state.endDate)} />
+          <ContractRow l={t("contract.row.duration")} v={nights ? `${nights} ${nights === 1 ? t("common.day") : t("common.days")}` : "—"} />
+          <ContractRow l={t("contract.row.payment")} v={payMethod} />
+          <ContractRow l={t("contract.row.whatsapp")} v={`${phoneCC} ${state.phoneNum || "—"}`} mono />
           <div style={{ height: 1, background: "#ececec", margin: "14px 0 10px" }} />
-          <ContractRow l="Refundable deposit" v={`$${deposit}`} />
+          <ContractRow l={t("contract.row.deposit")} v={`$${deposit}`} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0 4px" }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Total rental</span>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{t("contract.row.total")}</span>
             <span style={{ fontSize: 18, fontWeight: 700 }}>${total}</span>
           </div>
           <div style={{ height: 1, background: "#ececec", margin: "10px 0" }} />
           <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>
-            Terms & conditions
+            {t("contract.terms")}
           </div>
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: "var(--ink-2)", lineHeight: 1.55 }}>
-            <li><b>Vehicle.</b> The Owner (Karen & JJ Moto Rental) rents the above motorcycle to the Renter for the dates listed. The motorcycle is delivered with a surf rack, two helmets and roadside assistance during business hours.</li>
-            <li><b>Renter's responsibility.</b> The Renter accepts the motorcycle in good working condition and agrees to return it in the same condition. The Renter is the sole responsible operator and must hold a valid driver's license.</li>
-            <li><b>Damage.</b> The Renter is responsible for any and all damage to the motorcycle, accessories or third-party property occurring during the rental period, regardless of cause or fault. The Renter agrees to compensate the Owner for the full cost of repairs.</li>
-            <li><b>Loss or theft.</b> In the event of loss or theft of the motorcycle, helmets, surf rack or keys during the rental period, the Renter agrees to compensate the Owner for the <b>full market replacement value</b> of the motorcycle and any missing accessories, payable within 14 days of the incident.</li>
-            <li><b>Use.</b> The motorcycle may not be used for illegal activity or operated under the influence of alcohol or drugs.</li>
-            <li><b>Insurance.</b> The motorcycle carries Nicaraguan third-party liability insurance only. Personal injury, medical expenses and damage to the motorcycle itself are <b>not</b> covered.</li>
-            <li><b>Helmets.</b> Helmets must be worn at all times by both rider and passenger.</li>
-            <li><b>Deposit.</b> A refundable deposit of <b>${config?.deposit ?? 100} USD</b> is held at delivery and returned in full upon return.</li>
-            <li><b>Late return.</b> Returns later than the agreed drop-off date will be billed at the applicable daily rate per started day.</li>
-            <li><b>Acceptance.</b> By signing below, the Renter confirms they have read, understood and agree to all terms.</li>
+            <li>{t("contract.term.vehicle")}</li>
+            <li>{t("contract.term.responsibility")}</li>
+            <li>{t("contract.term.damage")}</li>
+            <li>{t("contract.term.theft")}</li>
+            <li>{t("contract.term.use")}</li>
+            <li>{t("contract.term.insurance")}</li>
+            <li>{t("contract.term.helmets")}</li>
+            <li>{t("contract.term.deposit", { deposit: config?.deposit ?? 100 })}</li>
+            <li>{t("contract.term.late")}</li>
+            <li>{t("contract.term.acceptance")}</li>
           </ol>
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Your signature</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{t("contract.signature")}</div>
           <SignaturePad value={state.signature} onChange={(s) => set({ signature: { ...(state.signature || {}), ...s } })} />
         </div>
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
-        <PrimaryButton disabled={!sigOk} onClick={onNext}>I agree & continue</PrimaryButton>
+        <PrimaryButton disabled={!sigOk} onClick={onNext}>{t("contract.agreeCta")}</PrimaryButton>
       </div>
     </div>
   );

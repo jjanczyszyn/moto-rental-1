@@ -2,15 +2,19 @@ import React from "react";
 import { ReservationDraft } from "../hooks/useReservationDraft";
 import { StepHeader, ProgressBar, PrimaryButton, daysBetween, sameDay } from "../components/Common";
 import { computeTotal } from "../lib/pricing";
-
-const fmtMonth = (d: Date) => d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+import { useI18n } from "../i18n/I18nContext";
 
 function MonthGrid({
   year, month, start, end, onPick,
 }: {
   year: number; month: number; start: Date | null; end: Date | null; onPick: (d: Date) => void;
 }) {
+  const { intlLocale, locale } = useI18n();
   const first = new Date(year, month, 1);
+  const fmtMonth = (d: Date) => d.toLocaleDateString(intlLocale, { month: "long", year: "numeric" });
+  const dayLabels = locale === "es"
+    ? ["D", "L", "M", "M", "J", "V", "S"]
+    : ["S", "M", "T", "W", "T", "F", "S"];
   const startWeekday = first.getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -21,7 +25,7 @@ function MonthGrid({
     <div style={{ padding: "8px 16px 24px" }}>
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{fmtMonth(first)}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-        {["S", "M", "T", "W", "T", "F", "S"].map((l, i) => (
+        {dayLabels.map((l, i) => (
           <div key={i} style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", padding: "4px 0" }}>{l}</div>
         ))}
         {cells.map((d, i) => {
@@ -67,6 +71,7 @@ export function CalendarScreen({
   onNext: () => void;
   rates: { daily: number; weekly: number; monthly: number };
 }) {
+  const { t, intlLocale } = useI18n();
   const { startDate, endDate } = state;
   const today = new Date();
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -79,19 +84,22 @@ export function CalendarScreen({
     set({ endDate: d });
   };
   const nights = startDate && endDate ? daysBetween(startDate, endDate) : 0;
-  const fmt = (d: Date | null) => (d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—");
+  const fmt = (d: Date | null) => (d ? d.toLocaleDateString(intlLocale, { month: "short", day: "numeric" }) : "—");
+  const nightsLabel = nights
+    ? `${nights} ${nights === 1 ? t("common.day") : t("common.days")}`
+    : t("calendar.selectDates");
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff" }}>
-      <StepHeader onBack={onBack} title="When do you need it?" step={1} total={7} />
+      <StepHeader onBack={onBack} title={t("calendar.title")} step={1} total={7} />
       <ProgressBar step={1} total={7} />
       <div style={{ padding: "14px 16px 8px", display: "flex", gap: 8 }}>
         <div style={pillBox(!!startDate)}>
-          <div style={pillLabel}>Pick-up</div>
+          <div style={pillLabel}>{t("calendar.pickup")}</div>
           <div style={pillValue}>{fmt(startDate)}</div>
         </div>
         <div style={pillBox(!!endDate)}>
-          <div style={pillLabel}>Drop-off</div>
+          <div style={pillLabel}>{t("calendar.dropoff")}</div>
           <div style={pillValue}>{fmt(endDate)}</div>
         </div>
       </div>
@@ -102,14 +110,14 @@ export function CalendarScreen({
       </div>
       <div style={{ padding: 16, borderTop: "1px solid var(--line)", background: "#fff" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, fontSize: 13 }}>
-          <span style={{ color: "var(--muted)" }}>{nights ? `${nights} ${nights === 1 ? "day" : "days"}` : "Select your dates"}</span>
+          <span style={{ color: "var(--muted)" }}>{nightsLabel}</span>
           {nights > 0 && (
             <span style={{ fontWeight: 600 }}>
-              ${computeTotal(nights, rates)} <span style={{ color: "var(--muted)", fontWeight: 400 }}>est.</span>
+              ${computeTotal(nights, rates)} <span style={{ color: "var(--muted)", fontWeight: 400 }}>{t("calendar.est")}</span>
             </span>
           )}
         </div>
-        <PrimaryButton disabled={!startDate || !endDate} onClick={onNext}>Continue</PrimaryButton>
+        <PrimaryButton disabled={!startDate || !endDate} onClick={onNext}>{t("common.continue")}</PrimaryButton>
       </div>
     </div>
   );
