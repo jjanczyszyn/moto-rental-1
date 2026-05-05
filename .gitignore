@@ -7,3 +7,10 @@ convex/_generated
 .vite
 *.tsbuildinfo
 coverage
+
+# Private local test fixtures — real documents shared during debug sessions.
+# Anything in here MUST stay out of git. See CLAUDE.md.
+tests-local/
+*.private.test.ts
+*.private.test.tsx
+fixtures-private/

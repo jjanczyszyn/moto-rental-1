@@ -152,20 +152,76 @@ function resolveCountry(code: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// TD3 (passport) parser — 2 lines × 44 chars, first line starts "P<"
+// TD3 (passport) parser — 2 lines × 44 chars
+//
+// Real-world tesseract output is messy. Common failures we tolerate:
+//   - "P<" prefix on line 1 read as "PS" (S in place of <), breaking strict
+//     length/position math
+//   - Leading digit of line 2 dropped, shifting all field positions left
+//   - "<<" filler between country and surname (Germany's "D<<" code) confused
+//     with the surname/given-names "<<" separator
+//
+// Strategy: scan first chars for a known country code instead of trusting
+// the "P<" prefix; anchor line-2 fields on the country-code substring rather
+// than fixed offsets.
 // ---------------------------------------------------------------------------
+
+// Look for a country code in the first `maxStart` characters of a normalised
+// MRZ line. Returns where the 3-char country slot begins. Handles standard
+// 3-letter codes and Germany's single-letter "D<<" form.
+function findCountryInHead(
+  line: string,
+  maxStart: number = 6
+): { code: string; pos: number } | null {
+  for (let i = 0; i <= Math.min(maxStart, line.length - 3); i++) {
+    const slot = line.slice(i, i + 3);
+    if (slot.length < 3) break;
+    if (ISO3_TO_NAME[slot]) return { code: slot, pos: i };
+    if (slot === "D<<") return { code: "D", pos: i };
+  }
+  return null;
+}
+
+// Same idea for line 2 — country is at standard position 10 but OCR can
+// shift it left by 1-2 positions, so we scan 5..13. Wider than that risks
+// matching TD1 line 2's nationality field (position 15) and confusing an
+// ID card for a passport.
+function findCountryInLine2(line: string): { code: string; pos: number } | null {
+  for (let i = 5; i <= Math.min(13, line.length - 3); i++) {
+    const slot = line.slice(i, i + 3);
+    if (ISO3_TO_NAME[slot] && slot.length === 3) return { code: slot, pos: i };
+  }
+  return null;
+}
 
 function findTD3Pair(text: string): [string, string] | null {
   const lines = text
     .split(/\r?\n/)
     .map(normaliseMrzLine)
-    .filter((l) => l.length >= 30);
+    .filter((l) => l.length >= 20);
 
   for (let i = 0; i < lines.length - 1; i++) {
     const a = lines[i];
-    const b = lines[i + 1];
-    if (!/^P[A-Z<]/.test(a)) continue;
-    if (!/\d{6,}/.test(b.slice(0, 30))) continue;
+    let b = lines[i + 1];
+    // Line 1 must carry a country code in the prefix and a "<<" separator
+    // somewhere AFTER the country slot (not inside Germany's "D<<" filler).
+    const country = findCountryInHead(a, 6);
+    if (!country) continue;
+    const afterCountry = country.pos + 3;
+    if (a.slice(afterCountry).indexOf("<<") < 0) continue;
+    // Line 2 must contain a country code in the TD3 nationality window
+    // (positions 5..13). This rejects TD1 line 2 (which has nationality at
+    // position 15) and visual-zone numerics that happen to follow a name.
+    let l2Country = findCountryInLine2(b);
+    // Sometimes OCR splits line 2 across two output lines — try stitching.
+    if (!l2Country && i + 2 < lines.length) {
+      const stitched = b + lines[i + 2];
+      if (findCountryInLine2(stitched)) {
+        b = stitched;
+        l2Country = findCountryInLine2(b);
+      }
+    }
+    if (!l2Country) continue;
     return [pad(a, 44), pad(b, 44)];
   }
   return null;
@@ -176,22 +232,38 @@ function parseTD3(text: string): ParsedDocument | null {
   if (!pair) return null;
   const [line1, line2] = pair;
 
-  const country = resolveCountry(line1.slice(2, 5));
+  const detected = findCountryInHead(line1, 6);
+  if (!detected) return null;
+  let country = ISO3_TO_NAME[detected.code] ?? "";
 
-  // Names: SURNAME<<GIVEN<NAMES<<<<...
-  const names = line1.slice(5).replace(/<+$/, "");
-  const sepIdx = names.indexOf("<<");
+  // Surname starts after the 3-char country slot. Searching for "<<" from
+  // there sidesteps Germany's "D<<" filler.
+  const surnameStart = detected.pos + 3;
+  const sepRel = line1.slice(surnameStart).indexOf("<<");
   let lastName = "";
   let firstName = "";
-  if (sepIdx > 0) {
-    lastName = names.slice(0, sepIdx).replace(/</g, " ").trim();
-    firstName = names.slice(sepIdx + 2).replace(/</g, " ").trim();
-  } else {
-    lastName = names.replace(/</g, " ").trim();
+  if (sepRel >= 0) {
+    const sepIdx = surnameStart + sepRel;
+    lastName = line1.slice(surnameStart, sepIdx).replace(/</g, " ").trim();
+    firstName = line1.slice(sepIdx + 2).replace(/</g, " ").trim();
   }
 
-  const docNumber = line2.slice(0, 9).replace(/</g, "").trim();
-  const expiryISO = mrzExpiryToISO(line2.slice(21, 27));
+  // Line 2 — anchor on the country code so OCR shifts (dropped leading
+  // digits etc.) don't break field offsets.
+  let docNumber = "";
+  let expiryISO = "";
+  const c2 = findCountryInLine2(line2);
+  if (c2) {
+    if (!country) country = ISO3_TO_NAME[c2.code] ?? "";
+    const offset = c2.pos - 10;
+    const docStart = Math.max(0, offset);
+    const docEnd = Math.max(0, offset + 9);
+    docNumber = line2.slice(docStart, docEnd).replace(/</g, "").trim();
+    expiryISO = mrzExpiryToISO(line2.slice(offset + 21, offset + 27));
+  } else {
+    docNumber = line2.slice(0, 9).replace(/</g, "").trim();
+    expiryISO = mrzExpiryToISO(line2.slice(21, 27));
+  }
 
   if (!docNumber && !expiryISO && !lastName) return null;
 
@@ -237,6 +309,21 @@ function findTD1Triple(text: string): [string, string, string] | null {
     return [pad(a, 30), pad(b, 30), pad(c, 30)];
   }
   return null;
+}
+
+// Cross-reference the visual zone for a passport number when the MRZ-derived
+// number looks short. Real passports have 9 digits/alphanumerics; the MRZ
+// slot carries 9 chars + 1 check digit but tesseract sometimes drops the
+// leading char.
+function findVisualPassportNumber(text: string): string {
+  // Country code adjacent to a 8-9 digit run, e.g. printed as "USA NNNNNNNNN".
+  const m = text.match(/\b(USA|CAN|DEU|ESP|GBR|FRA|MEX|AUS|NLD|ITA)[\s.:,]+(\d{8,9})\b/i);
+  if (m) return m[2];
+  // Labelled visual zones: "Passport No.: …" / "N° du Passeport: …" /
+  // "Pasaporte n.: …" / "Reisepass-Nr.: …".
+  const m2 = text.match(/(?:Passport\s*No\.?|N°?\s*du\s*Passeport|Pasaporte\s*n\.?|Reisepass-?Nr\.?)[\s:.]*([A-Z0-9]{6,9})/i);
+  if (m2) return m2[1].toUpperCase();
+  return "";
 }
 
 function parseTD1(text: string): ParsedDocument | null {
@@ -520,7 +607,15 @@ export function parseDocumentText(text: string): ParsedDocument {
     };
   }
   const td3 = parseTD3(text);
-  if (td3) return td3;
+  if (td3) {
+    // If the MRZ-derived doc number is short (8 digits where most passports
+    // carry 9), see if the visual zone has the full number and prefer it.
+    if (td3.docNumber && /^\d{7,8}$/.test(td3.docNumber)) {
+      const visual = findVisualPassportNumber(text);
+      if (visual && visual.length > td3.docNumber.length) td3.docNumber = visual;
+    }
+    return td3;
+  }
   const td1 = parseTD1(text);
   if (td1) {
     // For Spanish DNI: visual zone has the user-facing DNI (8 digits + letter)

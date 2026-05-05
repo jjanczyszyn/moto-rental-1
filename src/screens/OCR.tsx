@@ -46,11 +46,14 @@ export function OCRScreen({
       })();
 
       const { default: Tesseract } = await import("tesseract.js");
+      // PSM 6 (single uniform block) keeps the MRZ on two readable lines
+      // rather than fragmenting it the way the default auto-detection does.
       const result = await Tesseract.recognize(f, "eng", {
         logger: (m: { status: string; progress: number }) => {
           if (m.status === "recognizing text") setProgress(Math.round(m.progress * 100));
         },
-      });
+        tessedit_pageseg_mode: "6",
+      } as Parameters<typeof Tesseract.recognize>[2]);
       const text = result?.data?.text ?? "";
       const parsed = parseDocumentText(text);
       const storageId = await uploadPromise;
