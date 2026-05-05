@@ -8,7 +8,8 @@ import {
   SOURCE_OPTIONS, isoToday, ConfirmButton, useIsMobile, mobileCard, mobileLabel,
   mobileValue,
 } from "./shared";
-import { RecordPaymentModal, PaymentStatusEditor } from "./Payments";
+import { RecordPaymentModal, PaymentStatusEditor, EditPaymentModal } from "./Payments";
+import type { Doc as ConvexDoc } from "../../convex/_generated/dataModel";
 
 interface Props { adminToken: string; }
 
@@ -413,6 +414,7 @@ export function BookingPaymentsPanel({
   const removePayment = useMutation(api.payments.remove);
   const updatePayment = useMutation(api.payments.update);
   const [recording, setRecording] = React.useState(false);
+  const [editing, setEditing] = React.useState<ConvexDoc<"payments"> | null>(null);
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -453,7 +455,10 @@ export function BookingPaymentsPanel({
                   </td>
                   <td style={{ ...tdStyle, fontSize: 12, color: "var(--muted)" }}>{p.notes ?? ""}</td>
                   <td style={tdStyle}>
-                    <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button style={btnGhost} onClick={() => setEditing(p)}>Edit</button>
+                      <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -466,6 +471,13 @@ export function BookingPaymentsPanel({
           reservationId={reservationId}
           adminToken={adminToken}
           onClose={() => setRecording(false)}
+        />
+      )}
+      {editing && (
+        <EditPaymentModal
+          payment={editing}
+          adminToken={adminToken}
+          onClose={() => setEditing(null)}
         />
       )}
     </>

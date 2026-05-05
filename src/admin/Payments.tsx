@@ -30,6 +30,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
   const removePayment = useMutation(api.payments.remove);
   const updatePayment = useMutation(api.payments.update);
   const [recordFor, setRecordFor] = React.useState<Id<"reservations"> | null>(null);
+  const [editing, setEditing] = React.useState<Doc<"payments"> | null>(null);
   const mobile = useIsMobile();
 
   return (
@@ -133,7 +134,8 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
                   {p.receivedAt ? fmtDate(new Date(p.receivedAt).toISOString()) : "—"}
                   {p.notes ? ` · ${p.notes}` : ""}
                 </div>
-                <div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button style={btnGhost} onClick={() => setEditing(p)}>Edit</button>
                   <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
                 </div>
               </div>
@@ -187,7 +189,10 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
                   </td>
                   <td style={{ ...tdStyle, fontSize: 12, color: "var(--muted)" }}>{p.notes ?? ""}</td>
                   <td style={tdStyle}>
-                    <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button style={btnGhost} onClick={() => setEditing(p)}>Edit</button>
+                      <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                    </div>
                   </td>
                 </tr>
               );
@@ -205,6 +210,13 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
           reservationId={recordFor}
           adminToken={adminToken}
           onClose={() => setRecordFor(null)}
+        />
+      )}
+      {editing && (
+        <EditPaymentModal
+          payment={editing}
+          adminToken={adminToken}
+          onClose={() => setEditing(null)}
         />
       )}
     </div>
@@ -330,6 +342,119 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={labelStyle}>{label}</span>
       {children}
     </label>
+  );
+}
+
+// Full edit dialog for an existing payment — same shape as Record but
+// pre-filled and pointed at payments.update so a wrong amount, method,
+// collector, type, status, date or note can be corrected without having to
+// delete-and-rerecord (which would break the payment's audit trail).
+export function EditPaymentModal({
+  payment, adminToken, onClose,
+}: {
+  payment: Doc<"payments">;
+  adminToken: string;
+  onClose: () => void;
+}) {
+  const cfg = useQuery(api.config.get);
+  const reservation = useQuery(api.reservations.list, {});
+  const r = reservation?.find((x) => x._id === payment.reservationId);
+  const update = useMutation(api.payments.update);
+
+  const [amount, setAmount] = React.useState(String(payment.amount));
+  const [method, setMethod] = React.useState<string>(payment.method);
+  const [collectedBy, setCollectedBy] = React.useState<"JJ" | "Karen">(payment.collectedBy);
+  const [paymentType, setPaymentType] = React.useState<typeof PAYMENT_TYPES[number]>(payment.paymentType);
+  const [status, setStatus] = React.useState<typeof PAYMENT_STATUSES[number]>(payment.status);
+  const [receivedDate, setReceivedDate] = React.useState(
+    payment.receivedAt
+      ? new Date(payment.receivedAt).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
+  );
+  const [notes, setNotes] = React.useState(payment.notes ?? "");
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState("");
+
+  const submit = async () => {
+    setBusy(true); setErr("");
+    try {
+      const amt = parseFloat(amount);
+      if (!amt || amt <= 0) throw new Error("Amount must be greater than zero.");
+      const receivedAt = status === "received"
+        ? new Date(receivedDate + "T12:00:00").getTime()
+        : undefined;
+      await update({
+        adminToken,
+        paymentId: payment._id,
+        amount: amt,
+        method,
+        collectedBy,
+        paymentType,
+        status,
+        receivedAt,
+        notes: notes || undefined,
+      });
+      onClose();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 70, padding: 20,
+    }}>
+      <div style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <strong>Edit payment{r ? ` · ${r.code}` : ""}</strong>
+          <button style={btnGhost} onClick={onClose}>Close</button>
+        </div>
+        {r && (
+          <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
+            {r.docFirstName} {r.docLastName} · {fmtUSD(r.totalUSD)} total · {r.days} days
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Field label="Amount (USD)">
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+          </Field>
+          <Field label="Method">
+            <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
+              {(cfg?.paymentMethods ?? []).map((m) => (<option key={m.id} value={m.id}>{m.label}</option>))}
+            </select>
+          </Field>
+          <Field label="Collected by">
+            <select value={collectedBy} onChange={(e) => setCollectedBy(e.target.value as any)} style={inputStyle}>
+              {PARTNERS.map((p) => (<option key={p} value={p}>{p}</option>))}
+            </select>
+          </Field>
+          <Field label="Payment type">
+            <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as any)} style={inputStyle}>
+              {PAYMENT_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
+            </select>
+          </Field>
+          <Field label="Status">
+            <select value={status} onChange={(e) => setStatus(e.target.value as any)} style={inputStyle}>
+              {PAYMENT_STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}
+            </select>
+          </Field>
+          <Field label="Received date">
+            <input type="date" value={receivedDate} onChange={(e) => setReceivedDate(e.target.value)} style={inputStyle} />
+          </Field>
+        </div>
+        <Field label="Notes">
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...inputStyle, width: "100%" }} />
+        </Field>
+        {err && <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>{err}</div>}
+        <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button style={btnGhost} onClick={onClose}>Cancel</button>
+          <button style={btnPrimary} onClick={submit} disabled={busy}>{busy ? "Saving…" : "Save changes"}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
