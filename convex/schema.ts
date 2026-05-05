@@ -83,6 +83,11 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_bike_dates", ["bikeId", "startDate"]),
 
+  adminSessions: defineTable({
+    token: v.string(),
+    expiresAt: v.number(),
+  }).index("by_token", ["token"]),
+
   reviews: defineTable({
     googleId: v.string(),
     name: v.string(),

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { assertAdmin } from "./admin";
 
 export const list = query({
   args: {},
@@ -83,8 +84,9 @@ export const ensureSeeded = mutation({
 });
 
 export const setActive = mutation({
-  args: { bikeId: v.id("bikes"), isActive: v.boolean() },
-  handler: async (ctx, { bikeId, isActive }) => {
+  args: { bikeId: v.id("bikes"), isActive: v.boolean(), adminToken: v.string() },
+  handler: async (ctx, { bikeId, isActive, adminToken }) => {
+    await assertAdmin(ctx, adminToken);
     await ctx.db.patch(bikeId, { isActive });
   },
 });
@@ -100,8 +102,10 @@ export const patchBySlug = mutation({
     range: v.optional(v.string()),
     image: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
+    adminToken: v.string(),
   },
-  handler: async (ctx, { slug, ...fields }) => {
+  handler: async (ctx, { slug, adminToken, ...fields }) => {
+    await assertAdmin(ctx, adminToken);
     const bike = await ctx.db
       .query("bikes")
       .withIndex("by_slug", (q) => q.eq("slug", slug))

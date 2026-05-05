@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:full": "convex dev --run-sh 'vite'",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && mkdir -p dist/admin && cp dist/index.html dist/admin/index.html",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

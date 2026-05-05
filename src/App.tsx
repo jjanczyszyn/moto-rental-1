@@ -19,15 +19,19 @@ const SCREENS: Screen[] = ["home", "calendar", "bike", "ocr", "phone", "pay", "c
 
 
 export default function App() {
-  // Tiny client-side router for /admin
-  const [route, setRoute] = React.useState<string>(() => window.location.hash || "");
+  // Tiny client-side router. /admin is a real path now (not a hash) — works
+  // on Pages because the build also emits dist/admin/index.html as a copy of
+  // the SPA entry, so a request to /admin lands here too.
+  const [path, setPath] = React.useState<string>(() => window.location.pathname);
   React.useEffect(() => {
-    const onHash = () => setRoute(window.location.hash);
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
-  if (route === "#/admin") return <AdminScreen />;
-
+  // Also support the legacy hash URL so existing bookmarks keep working.
+  const isAdmin =
+    /\/admin\/?$/.test(path) || window.location.hash === "#/admin";
+  if (isAdmin) return <AdminScreen />;
   return <RentalFlow />;
 }
 

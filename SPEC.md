@@ -264,7 +264,9 @@ cluttering the DB.
 - View the contract PDF and signature for any reservation
 
 Auth: Convex's built-in auth with a single allow-list of owner phone numbers
-(`+50589750052`, `+16469340781`). and hardcoded passwords: (`Karen-esta-Fuert3`, `JJ-is-f0rmidable`)
+(`+50589750052`, `+16469340781`). Admin-panel passwords are injected at build
+time via the `VITE_ADMIN_PASSWORDS` env var (comma-separated allowlist) — see
+`src/screens/Admin.tsx` and the `.passwords` file at the repo root (gitignored).
 
 ---
 

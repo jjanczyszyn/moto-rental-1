@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { computeTotal, daysBetweenISO } from "./lib/pricing";
+import { assertAdmin } from "./admin";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genCode(): string {
@@ -192,8 +193,10 @@ export const setStatus = mutation({
       v.literal("returned"),
       v.literal("cancelled")
     ),
+    adminToken: v.string(),
   },
-  handler: async (ctx, { id, status }) => {
+  handler: async (ctx, { id, status, adminToken }) => {
+    await assertAdmin(ctx, adminToken);
     await ctx.db.patch(id, { status, updatedAt: Date.now() });
   },
 });

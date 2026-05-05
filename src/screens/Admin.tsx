@@ -3,31 +3,66 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
-const PASSWORDS = ["Karen-esta-Fuert3", "JJ-is-f0rmidable"];
-const STORAGE_KEY = "kj-admin-auth";
+// Server-side auth: the password allowlist lives in the ADMIN_PASSWORDS
+// Convex env var, never in the client bundle. We submit the typed password
+// to admin.verifyPassword which returns a session token; that token is then
+// required by every admin-only mutation.
+const TOKEN_KEY = "kj-admin-token";
 
 function useAdminAuth() {
-  const [authed, setAuthed] = React.useState(() => sessionStorage.getItem(STORAGE_KEY) === "1");
-  const tryPassword = (pw: string) => {
-    if (PASSWORDS.includes(pw)) {
-      sessionStorage.setItem(STORAGE_KEY, "1");
-      setAuthed(true);
-      return true;
+  const [token, setToken] = React.useState<string | null>(() =>
+    sessionStorage.getItem(TOKEN_KEY)
+  );
+  const session = useQuery(api.admin.checkSession, token ? { token } : "skip");
+  const verifyPassword = useMutation(api.admin.verifyPassword);
+  const logoutMutation = useMutation(api.admin.logout);
+
+  // If the server reports the session is no longer valid (expired, deleted),
+  // drop our cached token so the login gate shows again.
+  React.useEffect(() => {
+    if (token && session && !session.ok) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      setToken(null);
     }
-    return false;
+  }, [token, session]);
+
+  const tryPassword = async (pw: string): Promise<boolean> => {
+    try {
+      const result = await verifyPassword({ password: pw });
+      sessionStorage.setItem(TOKEN_KEY, result.token);
+      setToken(result.token);
+      return true;
+    } catch {
+      return false;
+    }
   };
-  const logout = () => { sessionStorage.removeItem(STORAGE_KEY); setAuthed(false); };
-  return { authed, tryPassword, logout };
+  const logout = async () => {
+    if (token) await logoutMutation({ token }).catch(() => {});
+    sessionStorage.removeItem(TOKEN_KEY);
+    setToken(null);
+  };
+  // Authed iff we have a token AND the latest server check confirms it (or
+  // is still loading — useQuery returns undefined while in-flight, treat as
+  // optimistic-allowed so the panel doesn't flash on every page load).
+  const authed = !!token && (session === undefined || session.ok);
+  return { authed, token, tryPassword, logout };
 }
 
-function LoginGate({ onSubmit }: { onSubmit: (pw: string) => boolean }) {
+function LoginGate({ onSubmit }: { onSubmit: (pw: string) => Promise<boolean> }) {
   const [pw, setPw] = React.useState("");
   const [err, setErr] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
   return (
     <div style={{ maxWidth: 360, margin: "100px auto", padding: 24, border: "1px solid var(--line)", borderRadius: 16 }}>
       <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Admin login</h2>
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>Enter the owner password.</p>
-      <form onSubmit={(e) => { e.preventDefault(); if (!onSubmit(pw)) setErr(true); }}>
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true); setErr(false);
+        const ok = await onSubmit(pw);
+        setBusy(false);
+        if (!ok) setErr(true);
+      }}>
         <input
           type="password"
           value={pw}
@@ -41,10 +76,11 @@ function LoginGate({ onSubmit }: { onSubmit: (pw: string) => boolean }) {
           }}
         />
         {err && <div style={{ color: "#dc2626", fontSize: 12, marginBottom: 12 }}>Wrong password.</div>}
-        <button type="submit" style={{
+        <button type="submit" disabled={busy} style={{
           width: "100%", padding: 12, borderRadius: 10, border: "none",
           background: "var(--ink)", color: "#fff", fontSize: 14, fontWeight: 600,
-        }}>Sign in</button>
+          opacity: busy ? 0.7 : 1, cursor: busy ? "default" : "pointer",
+        }}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
     </div>
   );
@@ -67,12 +103,11 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function ReservationsTable() {
+function ReservationsTable({ adminToken }: { adminToken: string }) {
   const reservations = useQuery(api.reservations.list, {}) ?? [];
   const setStatus = useMutation(api.reservations.setStatus);
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const today = new Date(); today.setHours(0,0,0,0);
 
   return (
     <div>
@@ -95,16 +130,16 @@ function ReservationsTable() {
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               {r.status === "pending" && (
-                <button onClick={() => setStatus({ id: r._id, status: "confirmed" })} style={btnPrimary}>Confirm</button>
+                <button onClick={() => setStatus({ id: r._id, status: "confirmed", adminToken })} style={btnPrimary}>Confirm</button>
               )}
               {r.status === "confirmed" && (
-                <button onClick={() => setStatus({ id: r._id, status: "active" })} style={btnPrimary}>Mark delivered</button>
+                <button onClick={() => setStatus({ id: r._id, status: "active", adminToken })} style={btnPrimary}>Mark delivered</button>
               )}
               {r.status === "active" && (
-                <button onClick={() => setStatus({ id: r._id, status: "returned" })} style={btnPrimary}>Mark returned</button>
+                <button onClick={() => setStatus({ id: r._id, status: "returned", adminToken })} style={btnPrimary}>Mark returned</button>
               )}
               {r.status !== "cancelled" && r.status !== "returned" && (
-                <button onClick={() => setStatus({ id: r._id, status: "cancelled" })} style={btnGhost}>Cancel</button>
+                <button onClick={() => setStatus({ id: r._id, status: "cancelled", adminToken })} style={btnGhost}>Cancel</button>
               )}
             </div>
           </div>
@@ -115,7 +150,7 @@ function ReservationsTable() {
   );
 }
 
-function BikesPanel() {
+function BikesPanel({ adminToken }: { adminToken: string }) {
   const bikes = useQuery(api.bikes.list) ?? [];
   const setActive = useMutation(api.bikes.setActive);
   return (
@@ -130,7 +165,7 @@ function BikesPanel() {
               <input
                 type="checkbox"
                 checked={b.isActive}
-                onChange={(e) => setActive({ bikeId: b._id as Id<"bikes">, isActive: e.target.checked })}
+                onChange={(e) => setActive({ bikeId: b._id as Id<"bikes">, isActive: e.target.checked, adminToken })}
               />
               Active
             </label>
@@ -151,8 +186,8 @@ const btnGhost: React.CSSProperties = {
 };
 
 export function AdminScreen() {
-  const { authed, tryPassword, logout } = useAdminAuth();
-  if (!authed) return <LoginGate onSubmit={tryPassword} />;
+  const { authed, token, tryPassword, logout } = useAdminAuth();
+  if (!authed || !token) return <LoginGate onSubmit={tryPassword} />;
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 20px" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -163,8 +198,8 @@ export function AdminScreen() {
         <button onClick={logout} style={btnGhost}>Sign out</button>
       </header>
       <div style={{ display: "grid", gap: 32 }}>
-        <ReservationsTable />
-        <BikesPanel />
+        <ReservationsTable adminToken={token} />
+        <BikesPanel adminToken={token} />
       </div>
     </div>
   );
