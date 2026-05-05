@@ -77,20 +77,19 @@ function LoginGate({
     <div style={{ maxWidth: 360, margin: "100px auto", padding: 24, border: "1px solid var(--line)", borderRadius: 16 }}>
       <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Admin login</h2>
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-        Enter your username (karen or jj) and password.
+        Enter your owner credentials.
       </p>
       <form onSubmit={async (e) => {
         e.preventDefault();
         const u = usernameRaw.trim().toLowerCase();
-        if (u !== "karen" && u !== "jj") {
-          setErr("Username must be 'karen' or 'jj'.");
-          return;
-        }
+        if (!u) return;
         setBusy(true); setErr(null);
         sessionStorage.setItem("kj-admin-user", u);
-        const ok = await onSubmit(u, pw);
+        const ok = await onSubmit(u as "karen" | "jj", pw);
         setBusy(false);
-        if (!ok) setErr("Wrong username or password.");
+        // Generic message — never reveal whether the username or password was
+        // the wrong half. Only owners know which usernames are valid.
+        if (!ok) setErr("Invalid credentials.");
       }}>
         <div style={labelStyle}>Username</div>
         <input
@@ -98,7 +97,7 @@ function LoginGate({
           value={usernameRaw}
           onChange={(e) => { setUsernameRaw(e.target.value); setErr(null); }}
           autoFocus
-          placeholder="karen or jj"
+          placeholder="Username"
           autoComplete="username"
           autoCapitalize="none"
           autoCorrect="off"
@@ -115,6 +114,8 @@ function LoginGate({
           style={inputStyle(!!err)}
         />
         {err && <div style={{ color: "#dc2626", fontSize: 12, marginBottom: 12 }}>{err}</div>}
+        {/* Server already returns a generic "Invalid username or password."
+            so the response status doesn't leak which half was wrong either. */}
         <button type="submit" disabled={busy || !pw || !usernameRaw.trim()} style={{
           width: "100%", padding: 12, borderRadius: 10, border: "none",
           background: "var(--ink)", color: "#fff", fontSize: 14, fontWeight: 600,
