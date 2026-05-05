@@ -1,17 +1,21 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx } from "./_generated/server";
 
-// Server-side admin auth. The password allowlist lives in the
-// ADMIN_PASSWORDS Convex env var (comma-separated). Verifying a password
-// returns a random session token that's stored in the adminSessions table
-// and required by every admin-only mutation. The client never sees the
-// password material — it only exists in the Convex deployment env.
+// Server-side admin auth. Each owner has their own password env var
+// (ADMIN_KAREN_PASSWORD / ADMIN_JJ_PASSWORD). Login takes a username +
+// password pair; verification returns a random session token stored in the
+// adminSessions table that every admin-only mutation requires. The client
+// never sees the password material — it only exists in the Convex deployment
+// env.
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const USERS = ["karen", "jj"] as const;
+type AdminUsername = typeof USERS[number];
 
-function loadAllowed(): string[] {
-  const raw = process.env.ADMIN_PASSWORDS ?? "";
-  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+function passwordFor(username: AdminUsername): string {
+  if (username === "karen") return process.env.ADMIN_KAREN_PASSWORD ?? "";
+  if (username === "jj") return process.env.ADMIN_JJ_PASSWORD ?? "";
+  return "";
 }
 
 function randomToken(): string {
@@ -25,19 +29,23 @@ function randomToken(): string {
 }
 
 export const verifyPassword = mutation({
-  args: { password: v.string() },
-  handler: async (ctx, { password }) => {
-    const allowed = loadAllowed();
-    if (allowed.length === 0) {
-      throw new Error("Admin login is not configured (ADMIN_PASSWORDS env var unset).");
+  args: {
+    username: v.union(v.literal("karen"), v.literal("jj")),
+    password: v.string(),
+  },
+  handler: async (ctx, { username, password }) => {
+    const expected = passwordFor(username);
+    if (!expected) {
+      throw new Error("Admin login is not configured for this user.");
     }
-    if (!allowed.includes(password)) {
-      // Generic message — don't leak whether the env var is set.
-      throw new Error("Invalid password.");
+    if (password !== expected) {
+      // Generic message — don't leak which axis was wrong.
+      throw new Error("Invalid username or password.");
     }
     const token = randomToken();
     await ctx.db.insert("adminSessions", {
       token,
+      username,
       expiresAt: Date.now() + SESSION_TTL_MS,
     });
     // Opportunistically clean up expired sessions so the table doesn't grow
@@ -46,7 +54,7 @@ export const verifyPassword = mutation({
     for (const s of stale) {
       if (s.expiresAt < Date.now()) await ctx.db.delete(s._id);
     }
-    return { token, expiresAt: Date.now() + SESSION_TTL_MS };
+    return { token, username, expiresAt: Date.now() + SESSION_TTL_MS };
   },
 });
 
@@ -57,9 +65,9 @@ export const checkSession = query({
       .query("adminSessions")
       .withIndex("by_token", (q) => q.eq("token", token))
       .first();
-    if (!row) return { ok: false };
-    if (row.expiresAt < Date.now()) return { ok: false };
-    return { ok: true, expiresAt: row.expiresAt };
+    if (!row) return { ok: false as const };
+    if (row.expiresAt < Date.now()) return { ok: false as const };
+    return { ok: true as const, expiresAt: row.expiresAt, username: row.username };
   },
 });
 

@@ -26,9 +26,12 @@ function useAdminAuth() {
     }
   }, [token, session]);
 
-  const tryPassword = async (pw: string): Promise<boolean> => {
+  const tryPassword = async (
+    username: "karen" | "jj",
+    pw: string
+  ): Promise<boolean> => {
     try {
-      const result = await verifyPassword({ password: pw });
+      const result = await verifyPassword({ username, password: pw });
       sessionStorage.setItem(TOKEN_KEY, result.token);
       setToken(result.token);
       return true;
@@ -48,38 +51,75 @@ function useAdminAuth() {
   return { authed, token, tryPassword, logout };
 }
 
-function LoginGate({ onSubmit }: { onSubmit: (pw: string) => Promise<boolean> }) {
+function LoginGate({
+  onSubmit,
+}: {
+  onSubmit: (username: "karen" | "jj", pw: string) => Promise<boolean>;
+}) {
+  const [usernameRaw, setUsernameRaw] = React.useState<string>(() =>
+    sessionStorage.getItem("kj-admin-user") ?? ""
+  );
   const [pw, setPw] = React.useState("");
-  const [err, setErr] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, color: "var(--muted)", letterSpacing: 0.6,
+    textTransform: "uppercase", fontWeight: 600, marginBottom: 6,
+  };
+  const inputStyle = (hasErr: boolean): React.CSSProperties => ({
+    width: "100%", padding: "12px 14px", borderRadius: 10,
+    border: `1px solid ${hasErr ? "#dc2626" : "var(--line)"}`,
+    fontSize: 14, marginBottom: 12, outline: "none", boxSizing: "border-box",
+  });
+
   return (
     <div style={{ maxWidth: 360, margin: "100px auto", padding: 24, border: "1px solid var(--line)", borderRadius: 16 }}>
       <h2 style={{ margin: "0 0 12px", fontSize: 22 }}>Admin login</h2>
-      <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>Enter the owner password.</p>
+      <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
+        Enter your username (karen or jj) and password.
+      </p>
       <form onSubmit={async (e) => {
         e.preventDefault();
-        setBusy(true); setErr(false);
-        const ok = await onSubmit(pw);
+        const u = usernameRaw.trim().toLowerCase();
+        if (u !== "karen" && u !== "jj") {
+          setErr("Username must be 'karen' or 'jj'.");
+          return;
+        }
+        setBusy(true); setErr(null);
+        sessionStorage.setItem("kj-admin-user", u);
+        const ok = await onSubmit(u, pw);
         setBusy(false);
-        if (!ok) setErr(true);
+        if (!ok) setErr("Wrong username or password.");
       }}>
+        <div style={labelStyle}>Username</div>
+        <input
+          type="text"
+          value={usernameRaw}
+          onChange={(e) => { setUsernameRaw(e.target.value); setErr(null); }}
+          autoFocus
+          placeholder="karen or jj"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          style={inputStyle(!!err)}
+        />
+        <div style={labelStyle}>Password</div>
         <input
           type="password"
           value={pw}
-          onChange={(e) => { setPw(e.target.value); setErr(false); }}
-          autoFocus
+          onChange={(e) => { setPw(e.target.value); setErr(null); }}
           placeholder="Password"
-          style={{
-            width: "100%", padding: "12px 14px", borderRadius: 10,
-            border: `1px solid ${err ? "#dc2626" : "var(--line)"}`,
-            fontSize: 14, marginBottom: 12, outline: "none",
-          }}
+          autoComplete="current-password"
+          style={inputStyle(!!err)}
         />
-        {err && <div style={{ color: "#dc2626", fontSize: 12, marginBottom: 12 }}>Wrong password.</div>}
-        <button type="submit" disabled={busy} style={{
+        {err && <div style={{ color: "#dc2626", fontSize: 12, marginBottom: 12 }}>{err}</div>}
+        <button type="submit" disabled={busy || !pw || !usernameRaw.trim()} style={{
           width: "100%", padding: 12, borderRadius: 10, border: "none",
           background: "var(--ink)", color: "#fff", fontSize: 14, fontWeight: 600,
-          opacity: busy ? 0.7 : 1, cursor: busy ? "default" : "pointer",
+          opacity: (busy || !pw || !usernameRaw.trim()) ? 0.6 : 1,
+          cursor: (busy || !pw || !usernameRaw.trim()) ? "default" : "pointer",
         }}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
     </div>

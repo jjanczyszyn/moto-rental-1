@@ -18,8 +18,20 @@ export default defineSchema({
         detail: v.array(v.string()),
         enabled: v.boolean(),
         url: v.optional(v.string()),
+        // Default partner who physically receives money paid via this method.
+        // Per-payment override still wins — see payments.collectedBy.
+        defaultCollector: v.optional(
+          v.union(v.literal("JJ"), v.literal("Karen"), v.literal("manual"))
+        ),
       })
     ),
+    // Partner split (defaults 70/30). Stored on each booking when created so
+    // historical reports stay stable if the split changes later.
+    jjSharePercentage: v.optional(v.number()),
+    karenSharePercentage: v.optional(v.number()),
+    businessName: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    timezone: v.optional(v.string()),
   }),
 
   bikes: defineTable({
@@ -31,6 +43,19 @@ export default defineSchema({
     range: v.string(),
     image: v.string(),
     isActive: v.boolean(),
+    // Operational status (admin spec). isActive stays in sync with this:
+    // status === "active" implies isActive true; anything else implies false.
+    status: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("inactive"),
+        v.literal("maintenance"),
+        v.literal("sold")
+      )
+    ),
+    // Per-bike override of the global daily rate. Falls back to config.dailyRate.
+    dailyRate: v.optional(v.number()),
+    notes: v.optional(v.string()),
   }).index("by_slug", ["slug"]),
 
   reservations: defineTable({
@@ -75,6 +100,15 @@ export default defineSchema({
     deliveryHour: v.number(),
     deliveryDate: v.optional(v.string()),
 
+    // Admin-panel additions
+    customerEmail: v.optional(v.string()),
+    source: v.optional(v.string()), // whatsapp | website | referral | hotel_partner | walk_in | instagram | facebook | other
+    discount: v.optional(v.number()),
+    dailyRateUSD: v.optional(v.number()),
+    jjSharePct: v.optional(v.number()),
+    karenSharePct: v.optional(v.number()),
+    notes: v.optional(v.string()),
+
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -83,9 +117,67 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_bike_dates", ["bikeId", "startDate"]),
 
+  // Each customer payment received against a booking. Source of truth for
+  // revenue and settlement — `reservations.paidAt` is legacy single-shot data.
+  payments: defineTable({
+    reservationId: v.id("reservations"),
+    amount: v.number(),
+    currency: v.optional(v.string()),
+    method: v.string(), // matches config.paymentMethods[].id
+    collectedBy: v.union(v.literal("JJ"), v.literal("Karen")),
+    paymentType: v.union(
+      v.literal("deposit"),
+      v.literal("balance"),
+      v.literal("full_payment"),
+      v.literal("refund")
+    ),
+    status: v.union(
+      v.literal("received"),
+      v.literal("pending"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+      v.literal("refunded")
+    ),
+    receivedAt: v.optional(v.number()), // ms epoch; required when status=received
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_reservation", ["reservationId"])
+    .index("by_status", ["status"])
+    .index("by_receivedAt", ["receivedAt"]),
+
+  settlementTransfers: defineTable({
+    fromPartner: v.union(v.literal("JJ"), v.literal("Karen")),
+    toPartner: v.union(v.literal("JJ"), v.literal("Karen")),
+    amount: v.number(),
+    currency: v.optional(v.string()),
+    date: v.string(), // ISO YYYY-MM-DD
+    method: v.string(),
+    settlementMonth: v.string(), // 'YYYY-MM'
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month", ["settlementMonth"])
+    .index("by_date", ["date"]),
+
+  // Maintenance/blocked days that aren't tied to a booking. Booking-driven
+  // unavailability is computed from reservations themselves at query time.
+  motorcycleAvailability: defineTable({
+    bikeId: v.id("bikes"),
+    date: v.string(), // ISO YYYY-MM-DD
+    status: v.union(v.literal("maintenance"), v.literal("blocked")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_bike_date", ["bikeId", "date"])
+    .index("by_date", ["date"]),
+
   adminSessions: defineTable({
     token: v.string(),
     expiresAt: v.number(),
+    username: v.optional(v.union(v.literal("karen"), v.literal("jj"))),
   }).index("by_token", ["token"]),
 
   reviews: defineTable({
