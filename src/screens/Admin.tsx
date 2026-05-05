@@ -1,11 +1,19 @@
 import React from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { Dashboard } from "../admin/Dashboard";
+import { Bookings } from "../admin/Bookings";
+import { Motorcycles } from "../admin/Motorcycles";
+import { Revenue } from "../admin/Revenue";
+import { Payments } from "../admin/Payments";
+import { Seasonality } from "../admin/Seasonality";
+import { Settlement } from "../admin/Settlement";
+import { Reports } from "../admin/Reports";
+import { Settings } from "../admin/Settings";
 
-// Server-side auth: the password allowlist lives in the ADMIN_PASSWORDS
-// Convex env var, never in the client bundle. We submit the typed password
-// to admin.verifyPassword which returns a session token; that token is then
+// Server-side auth: each owner has their own password env var
+// (ADMIN_KAREN_PASSWORD / ADMIN_JJ_PASSWORD). Login submits the typed
+// username + password pair; verifyPassword returns a session token that's
 // required by every admin-only mutation.
 const TOKEN_KEY = "kj-admin-token";
 
@@ -48,7 +56,7 @@ function useAdminAuth() {
   // is still loading — useQuery returns undefined while in-flight, treat as
   // optimistic-allowed so the panel doesn't flash on every page load).
   const authed = !!token && (session === undefined || session.ok);
-  return { authed, token, tryPassword, logout };
+  return { authed, token, tryPassword, logout, session };
 }
 
 function LoginGate({
@@ -127,121 +135,103 @@ function LoginGate({
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const colors: Record<string, [string, string]> = {
-    pending: ["#fef3c7", "#92400e"],
-    confirmed: ["#d1fae5", "#065f46"],
-    active: ["#dbeafe", "#1e3a8a"],
-    returned: ["#f3f4f6", "#374151"],
-    cancelled: ["#fee2e2", "#991b1b"],
-  };
-  const [bg, fg] = colors[status] ?? ["#f3f4f6", "#374151"];
-  return (
-    <span style={{
-      padding: "2px 8px", borderRadius: 999, background: bg, color: fg,
-      fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5,
-    }}>{status}</span>
-  );
-}
+const TABS = [
+  "dashboard", "bookings", "motorcycles", "revenue", "payments",
+  "seasonality", "settlement", "reports", "settings",
+] as const;
+type Tab = typeof TABS[number];
 
-function ReservationsTable({ adminToken }: { adminToken: string }) {
-  const reservations = useQuery(api.reservations.list, {}) ?? [];
-  const setStatus = useMutation(api.reservations.setStatus);
-
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  return (
-    <div>
-      <h3 style={{ marginTop: 0 }}>Reservations ({reservations.length})</h3>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {reservations.map((r) => (
-          <div key={r._id} style={{ padding: 12, border: "1px solid var(--line)", borderRadius: 12, background: "#fff", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ flex: "0 0 auto" }}><StatusPill status={r.status} /></div>
-            <div style={{ flex: "1 1 200px" }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>
-                {r.docFirstName} {r.docLastName}
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--muted)", marginLeft: 8 }}>{r.code}</span>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                {fmtDate(r.startDate)} → {fmtDate(r.endDate)} · {r.days}d · ${r.totalUSD} · {r.phoneCC} {r.phoneNum}
-              </div>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                {r.deliveryAddr || "—"} @ {r.deliveryHour}h
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {r.status === "pending" && (
-                <button onClick={() => setStatus({ id: r._id, status: "confirmed", adminToken })} style={btnPrimary}>Confirm</button>
-              )}
-              {r.status === "confirmed" && (
-                <button onClick={() => setStatus({ id: r._id, status: "active", adminToken })} style={btnPrimary}>Mark delivered</button>
-              )}
-              {r.status === "active" && (
-                <button onClick={() => setStatus({ id: r._id, status: "returned", adminToken })} style={btnPrimary}>Mark returned</button>
-              )}
-              {r.status !== "cancelled" && r.status !== "returned" && (
-                <button onClick={() => setStatus({ id: r._id, status: "cancelled", adminToken })} style={btnGhost}>Cancel</button>
-              )}
-            </div>
-          </div>
-        ))}
-        {reservations.length === 0 && <div style={{ color: "var(--muted)", fontSize: 13 }}>No reservations yet.</div>}
-      </div>
-    </div>
-  );
-}
-
-function BikesPanel({ adminToken }: { adminToken: string }) {
-  const bikes = useQuery(api.bikes.list) ?? [];
-  const setActive = useMutation(api.bikes.setActive);
-  return (
-    <div>
-      <h3>Fleet</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-        {bikes.map((b) => (
-          <div key={b._id} style={{ padding: 12, border: "1px solid var(--line)", borderRadius: 12 }}>
-            <div style={{ fontWeight: 600 }}>{b.name} · {b.color}</div>
-            <div style={{ fontSize: 12, color: "var(--muted)" }}>{b.plate} · {b.range}</div>
-            <label style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <input
-                type="checkbox"
-                checked={b.isActive}
-                onChange={(e) => setActive({ bikeId: b._id as Id<"bikes">, isActive: e.target.checked, adminToken })}
-              />
-              Active
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const btnPrimary: React.CSSProperties = {
-  padding: "6px 10px", borderRadius: 8, border: "none",
-  background: "var(--ink)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
-};
-const btnGhost: React.CSSProperties = {
-  padding: "6px 10px", borderRadius: 8, border: "1px solid var(--line)",
-  background: "#fff", color: "var(--ink)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+const TAB_LABELS: Record<Tab, string> = {
+  dashboard: "Dashboard",
+  bookings: "Bookings",
+  motorcycles: "Motorcycles",
+  revenue: "Revenue",
+  payments: "Payments",
+  seasonality: "Seasonality",
+  settlement: "Partner settlement",
+  reports: "Reports",
+  settings: "Settings",
 };
 
 export function AdminScreen() {
-  const { authed, token, tryPassword, logout } = useAdminAuth();
+  const { authed, token, tryPassword, logout, session } = useAdminAuth();
+  const [tab, setTab] = React.useState<Tab>(() => {
+    const fromHash = window.location.hash.replace(/^#/, "");
+    return (TABS as readonly string[]).includes(fromHash) ? (fromHash as Tab) : "dashboard";
+  });
+
+  React.useEffect(() => {
+    if (tab) window.location.hash = tab;
+  }, [tab]);
+
+  const today = new Date();
+  const [year, setYear] = React.useState(today.getFullYear());
+  const [monthIdx0, setMonthIdx0] = React.useState(today.getMonth());
+
   if (!authed || !token) return <LoginGate onSubmit={tryPassword} />;
+
+  const sectionProps = { year, monthIdx0, setYear, setMonth: setMonthIdx0 };
+  let body: React.ReactNode;
+  switch (tab) {
+    case "dashboard":   body = <Dashboard {...sectionProps} />; break;
+    case "bookings":    body = <Bookings adminToken={token} />; break;
+    case "motorcycles": body = <Motorcycles adminToken={token} />; break;
+    case "revenue":     body = <Revenue year={year} setYear={setYear} />; break;
+    case "payments":    body = <Payments adminToken={token} {...sectionProps} />; break;
+    case "seasonality": body = <Seasonality year={year} setYear={setYear} />; break;
+    case "settlement":  body = <Settlement adminToken={token} {...sectionProps} />; break;
+    case "reports":     body = <Reports year={year} setYear={setYear} />; break;
+    case "settings":    body = <Settings adminToken={token} />; break;
+  }
+
+  const username = (session && session.ok && session.username) ? session.username : null;
+
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 20px" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <div style={{ minHeight: "100dvh", background: "#fafafa", paddingBottom: 60 }}>
+      <header style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "16px 24px", borderBottom: "1px solid var(--line)",
+        background: "#fff", flexWrap: "wrap", gap: 12,
+      }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24 }}>Karen & JJ — Admin</h1>
-          <div style={{ fontSize: 12, color: "var(--muted)" }}>v1 owner dashboard</div>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>Karen & JJ Admin</div>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>Business cockpit</div>
         </div>
-        <button onClick={logout} style={btnGhost}>Sign out</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {username && (
+            <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Signed in as <strong style={{ color: "var(--ink)" }}>{username}</strong>
+            </span>
+          )}
+          <button onClick={logout} style={{
+            padding: "8px 12px", borderRadius: 8, border: "1px solid var(--line)",
+            background: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>Sign out</button>
+        </div>
       </header>
-      <div style={{ display: "grid", gap: 32 }}>
-        <ReservationsTable adminToken={token} />
-        <BikesPanel adminToken={token} />
-      </div>
+      <nav style={{
+        display: "flex", gap: 4, padding: "8px 24px",
+        borderBottom: "1px solid var(--line)", background: "#fff",
+        overflowX: "auto", whiteSpace: "nowrap",
+      }}>
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              padding: "8px 14px", borderRadius: 8, border: "none",
+              background: tab === t ? "var(--ink)" : "transparent",
+              color: tab === t ? "#fff" : "var(--ink-2)",
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            {TAB_LABELS[t]}
+          </button>
+        ))}
+      </nav>
+      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 20px" }}>
+        {body}
+      </main>
     </div>
   );
 }

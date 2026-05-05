@@ -11,6 +11,14 @@ export const list = query({
   },
 });
 
+// Admin listing — every bike, regardless of isActive/status.
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("bikes").collect();
+  },
+});
+
 export const availability = query({
   args: { startDate: v.string(), endDate: v.string() },
   handler: async (ctx, { startDate, endDate }) => {
@@ -87,7 +95,54 @@ export const setActive = mutation({
   args: { bikeId: v.id("bikes"), isActive: v.boolean(), adminToken: v.string() },
   handler: async (ctx, { bikeId, isActive, adminToken }) => {
     await assertAdmin(ctx, adminToken);
-    await ctx.db.patch(bikeId, { isActive });
+    // Keep the new `status` field in lockstep so the admin UI stays correct
+    // even when toggled from the legacy active checkbox.
+    await ctx.db.patch(bikeId, {
+      isActive,
+      status: isActive ? "active" : "inactive",
+    });
+  },
+});
+
+export const setStatus = mutation({
+  args: {
+    adminToken: v.string(),
+    bikeId: v.id("bikes"),
+    status: v.union(
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("maintenance"),
+      v.literal("sold")
+    ),
+  },
+  handler: async (ctx, { adminToken, bikeId, status }) => {
+    await assertAdmin(ctx, adminToken);
+    await ctx.db.patch(bikeId, {
+      status,
+      isActive: status === "active",
+    });
+  },
+});
+
+export const updateBike = mutation({
+  args: {
+    adminToken: v.string(),
+    bikeId: v.id("bikes"),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+    plate: v.optional(v.string()),
+    range: v.optional(v.string()),
+    image: v.optional(v.string()),
+    dailyRate: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminToken, bikeId, ...patch }) => {
+    await assertAdmin(ctx, adminToken);
+    const next: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(patch)) {
+      if (val !== undefined) next[k] = val;
+    }
+    await ctx.db.patch(bikeId, next);
   },
 });
 

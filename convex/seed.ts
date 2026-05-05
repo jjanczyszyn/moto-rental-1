@@ -5,17 +5,19 @@ export const all = mutation({
   handler: async (ctx) => {
     // config — only zelle and bank transfers carry the legal beneficiary name
     // (those are the channels where it's needed for the recipient lookup).
+    // defaultCollector follows the spec: cash → Karen, every other method
+    // routes to JJ by default. Per-payment override always wins.
     const paymentMethods = [
-      { id: "cash", label: "Cash on delivery", sub: "USD or córdobas at hand-off", detail: ["Payment on delivery in USD or córdobas."], enabled: true },
-      { id: "venmo", label: "Venmo", sub: "@justina-lydia", detail: ["Send to @justina-lydia."], enabled: true, url: "https://venmo.com/u/justina-lydia" },
-      { id: "zelle", label: "Zelle", sub: "6469340781", detail: ["Phone: 646 934 0781", "Recipient: Justyna Janczyszyn"], enabled: true },
-      { id: "paypal", label: "PayPal", sub: "paypal.me/JustinaLydia", detail: ["Friends & Family preferred (no fee)."], enabled: true, url: "https://www.paypal.com/paypalme/JustinaLydia" },
-      { id: "wise", label: "Wise", sub: "wise.com/pay/me/justynaj102", detail: ["Open the pay link to send via Wise."], enabled: true, url: "https://wise.com/pay/me/justynaj102" },
-      { id: "revolut", label: "Revolut", sub: "@justynshx", detail: ["Send to @justynshx via Revolut."], enabled: true, url: "https://revolut.me/justynshx" },
-      { id: "card", label: "Debit/credit card", sub: "Any Visa or Mastercard", detail: ["Pay with any debit or credit card on the hosted Revolut page — no account needed."], enabled: true, url: "https://revolut.me/justynshx" },
-      { id: "applepay", label: "Apple Pay", sub: "One tap on iPhone", detail: ["Tap Apple Pay on the hosted Revolut page."], enabled: true, url: "https://revolut.me/justynshx" },
-      { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing", detail: ["Beneficiary: Justyna Janczyszyn", "Routing: 026073150", "Account: 822000215918"], enabled: true },
-      { id: "transfer-eur", label: "Bank transfer · EUR", sub: "IBAN (Belgium)", detail: ["Beneficiary: Justyna Janczyszyn", "IBAN: BE06 9671 9692 5322"], enabled: true },
+      { id: "cash", label: "Cash on delivery", sub: "USD or córdobas at hand-off", detail: ["Payment on delivery in USD or córdobas."], enabled: true, defaultCollector: "Karen" as const },
+      { id: "venmo", label: "Venmo", sub: "@justina-lydia", detail: ["Send to @justina-lydia."], enabled: true, url: "https://venmo.com/u/justina-lydia", defaultCollector: "JJ" as const },
+      { id: "zelle", label: "Zelle", sub: "6469340781", detail: ["Phone: 646 934 0781", "Recipient: Justyna Janczyszyn"], enabled: true, defaultCollector: "JJ" as const },
+      { id: "paypal", label: "PayPal", sub: "paypal.me/JustinaLydia", detail: ["Friends & Family preferred (no fee)."], enabled: true, url: "https://www.paypal.com/paypalme/JustinaLydia", defaultCollector: "JJ" as const },
+      { id: "wise", label: "Wise", sub: "wise.com/pay/me/justynaj102", detail: ["Open the pay link to send via Wise."], enabled: true, url: "https://wise.com/pay/me/justynaj102", defaultCollector: "JJ" as const },
+      { id: "revolut", label: "Revolut", sub: "@justynshx", detail: ["Send to @justynshx via Revolut."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
+      { id: "card", label: "Debit/credit card", sub: "Any Visa or Mastercard", detail: ["Pay with any debit or credit card on the hosted Revolut page — no account needed."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
+      { id: "applepay", label: "Apple Pay", sub: "One tap on iPhone", detail: ["Tap Apple Pay on the hosted Revolut page."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
+      { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing", detail: ["Beneficiary: Justyna Janczyszyn", "Routing: 026073150", "Account: 822000215918"], enabled: true, defaultCollector: "JJ" as const },
+      { id: "transfer-eur", label: "Bank transfer · EUR", sub: "IBAN (Belgium)", detail: ["Beneficiary: Justyna Janczyszyn", "IBAN: BE06 9671 9692 5322"], enabled: true, defaultCollector: "JJ" as const },
     ];
     const cfg = await ctx.db.query("config").first();
     if (!cfg) {
@@ -28,11 +30,22 @@ export const all = mutation({
         deposit: 100,
         contractTerms: "",
         paymentMethods,
+        jjSharePercentage: 70,
+        karenSharePercentage: 30,
+        businessName: "Karen & JJ Moto Rental",
+        currency: "USD",
+        timezone: "America/Managua",
       });
     } else {
       // Re-apply payment methods on every seed run so edits propagate without
-      // a manual DB patch.
-      await ctx.db.patch(cfg._id, { paymentMethods });
+      // a manual DB patch. Back-fill business defaults for older rows.
+      const patch: Record<string, unknown> = { paymentMethods };
+      if (cfg.jjSharePercentage === undefined) patch.jjSharePercentage = 70;
+      if (cfg.karenSharePercentage === undefined) patch.karenSharePercentage = 30;
+      if (cfg.businessName === undefined) patch.businessName = "Karen & JJ Moto Rental";
+      if (cfg.currency === undefined) patch.currency = "USD";
+      if (cfg.timezone === undefined) patch.timezone = "America/Managua";
+      await ctx.db.patch(cfg._id, patch);
     }
 
     // bikes
