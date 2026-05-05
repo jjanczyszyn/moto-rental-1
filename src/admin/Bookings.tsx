@@ -16,6 +16,16 @@ export function Bookings({ adminToken }: Props) {
   const [sourceFilter, setSourceFilter] = React.useState<string>("");
   const [showNew, setShowNew] = React.useState(false);
   const [editing, setEditing] = React.useState<Id<"reservations"> | null>(null);
+  const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: Id<"reservations">) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const bookings = useQuery(
     api.reservations.listForAdmin,
@@ -52,6 +62,7 @@ export function Bookings({ adminToken }: Props) {
         <table style={tableStyle}>
           <thead>
             <tr>
+              <th style={{ ...thStyle, width: 32 }}></th>
               <th style={thStyle}>Code</th>
               <th style={thStyle}>Customer</th>
               <th style={thStyle}>Bike</th>
@@ -66,37 +77,62 @@ export function Bookings({ adminToken }: Props) {
             </tr>
           </thead>
           <tbody>
-            {(bookings ?? []).map((r) => (
-              <tr key={r._id}>
-                <td style={{ ...tdStyle, fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>{r.code}</td>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 600 }}>{r.docFirstName} {r.docLastName}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.phoneCC} {r.phoneNum}</div>
-                </td>
-                <td style={tdStyle}>
-                  {r.bike ? `${r.bike.name} ${r.bike.color}` : "—"}
-                  {r.bike && (<div style={{ fontSize: 11, color: "var(--muted)" }}>{r.bike.plate}</div>)}
-                </td>
-                <td style={tdStyle}>
-                  {fmtDateShort(r.startDate)} → {fmtDateShort(r.endDate)}
-                </td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{r.days}</td>
-                <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(r.totalUSD)}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(r.paid)}</td>
-                <td style={tdStyle}><StatusPill status={r.status} /></td>
-                <td style={tdStyle}><StatusPill status={r.payStatus} /></td>
-                <td style={{ ...tdStyle, textTransform: "capitalize" }}>{(r.source ?? "—").replace("_", " ")}</td>
-                <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button style={btnGhost} onClick={() => setEditing(r._id)}>Edit</button>
-                    <StatusActions r={r} onChange={(s) => setStatus({ id: r._id, status: s, adminToken })} />
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {(bookings ?? []).map((r) => {
+              const isOpen = expanded.has(r._id);
+              return (
+                <React.Fragment key={r._id}>
+                  <tr>
+                    <td
+                      style={{ ...tdStyle, cursor: "pointer", userSelect: "none", color: "var(--muted)", textAlign: "center" }}
+                      onClick={() => toggleExpanded(r._id)}
+                      title={isOpen ? "Hide payments" : "Show payments"}
+                    >
+                      {isOpen ? "▾" : "▸"}
+                    </td>
+                    <td style={{ ...tdStyle, fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>{r.code}</td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{r.docFirstName} {r.docLastName}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.phoneCC} {r.phoneNum}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      {r.bike ? `${r.bike.name} ${r.bike.color}` : "—"}
+                      {r.bike && (<div style={{ fontSize: 11, color: "var(--muted)" }}>{r.bike.plate}</div>)}
+                    </td>
+                    <td style={tdStyle}>
+                      {fmtDateShort(r.startDate)} → {fmtDateShort(r.endDate)}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "right" }}>{r.days}</td>
+                    <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(r.totalUSD)}</td>
+                    <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(r.paid)}</td>
+                    <td style={tdStyle}><StatusPill status={r.status} /></td>
+                    <td style={tdStyle}>
+                      <span style={{ cursor: "pointer" }} onClick={() => toggleExpanded(r._id)} title="Show payments">
+                        <StatusPill status={r.payStatus} />
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, textTransform: "capitalize" }}>{(r.source ?? "—").replace("_", " ")}</td>
+                    <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button style={btnGhost} onClick={() => setEditing(r._id)}>Edit</button>
+                        <StatusActions r={r} onChange={(s) => setStatus({ id: r._id, status: s, adminToken })} />
+                      </div>
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr>
+                      <td colSpan={12} style={{ padding: 0, background: "#fafafa", borderBottom: "1px solid var(--line-2)" }}>
+                        <div style={{ padding: "12px 16px" }}>
+                          <BookingPaymentsPanel reservationId={r._id} adminToken={adminToken} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
             {bookings && bookings.length === 0 && (
               <tr>
-                <td colSpan={11} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)", padding: 24 }}>
+                <td colSpan={12} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)", padding: 24 }}>
                   No bookings match these filters.
                 </td>
               </tr>
@@ -243,13 +279,6 @@ function EditBookingForm({
     setEndDate(r.endDate);
   }, [r]);
 
-  // Payments-for-this-booking subview. Reads live so that recording or
-  // editing a payment in the modal updates the visible list immediately.
-  const payments = useQuery(api.payments.listForReservation, { reservationId });
-  const removePayment = useMutation(api.payments.remove);
-  const updatePayment = useMutation(api.payments.update);
-  const [recording, setRecording] = React.useState(false);
-
   if (!r) return null;
   const submit = async () => {
     setBusy(true); setErr("");
@@ -301,52 +330,72 @@ function EditBookingForm({
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <strong>Payments ({payments?.length ?? 0})</strong>
-            <button style={btnPrimary} onClick={() => setRecording(true)}>+ Record payment</button>
-          </div>
-          {payments && payments.length === 0 && (
-            <div style={{ fontSize: 13, color: "var(--muted)" }}>No payments recorded for this booking yet.</div>
-          )}
-          {payments && payments.length > 0 && (
-            <div style={tableWrap}>
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Received</th>
-                    <th style={thStyle}>Method</th>
-                    <th style={thStyle}>Type</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
-                    <th style={thStyle}>Collected by</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((p) => (
-                    <tr key={p._id}>
-                      <td style={tdStyle}>{p.receivedAt ? fmtDate(new Date(p.receivedAt).toISOString()) : "—"}</td>
-                      <td style={tdStyle}>{p.method}</td>
-                      <td style={tdStyle}><StatusPill status={p.paymentType} /></td>
-                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(p.amount)}</td>
-                      <td style={tdStyle}>{p.collectedBy}</td>
-                      <td style={tdStyle}>
-                        <PaymentStatusEditor
-                          payment={p}
-                          onChange={(status) => updatePayment({ adminToken, paymentId: p._id, status })}
-                        />
-                      </td>
-                      <td style={tdStyle}>
-                        <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <BookingPaymentsPanel reservationId={reservationId} adminToken={adminToken} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// Inline payments panel reused inside the booking-edit modal AND under each
+// booking row in the main table. Lists existing payments, lets the manager
+// flip status (and other fields via the deletion + re-record path), and
+// gives one-click access to the record-payment modal scoped to this booking.
+export function BookingPaymentsPanel({
+  reservationId, adminToken,
+}: { reservationId: Id<"reservations">; adminToken: string }) {
+  const payments = useQuery(api.payments.listForReservation, { reservationId });
+  const removePayment = useMutation(api.payments.remove);
+  const updatePayment = useMutation(api.payments.update);
+  const [recording, setRecording] = React.useState(false);
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <strong>Payments ({payments?.length ?? 0})</strong>
+        <button style={btnPrimary} onClick={() => setRecording(true)}>+ Record payment</button>
+      </div>
+      {payments && payments.length === 0 && (
+        <div style={{ fontSize: 13, color: "var(--muted)" }}>No payments recorded for this booking yet.</div>
+      )}
+      {payments && payments.length > 0 && (
+        <div style={tableWrap}>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Received</th>
+                <th style={thStyle}>Method</th>
+                <th style={thStyle}>Type</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+                <th style={thStyle}>Collected by</th>
+                <th style={thStyle}>Status</th>
+                <th style={thStyle}>Notes</th>
+                <th style={thStyle}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p._id}>
+                  <td style={tdStyle}>{p.receivedAt ? fmtDate(new Date(p.receivedAt).toISOString()) : "—"}</td>
+                  <td style={tdStyle}>{p.method}</td>
+                  <td style={tdStyle}><StatusPill status={p.paymentType} /></td>
+                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(p.amount)}</td>
+                  <td style={tdStyle}>{p.collectedBy}</td>
+                  <td style={tdStyle}>
+                    <PaymentStatusEditor
+                      payment={p}
+                      onChange={(status) => updatePayment({ adminToken, paymentId: p._id, status })}
+                    />
+                  </td>
+                  <td style={{ ...tdStyle, fontSize: 12, color: "var(--muted)" }}>{p.notes ?? ""}</td>
+                  <td style={tdStyle}>
+                    <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {recording && (
         <RecordPaymentModal
           reservationId={reservationId}
@@ -354,7 +403,7 @@ function EditBookingForm({
           onClose={() => setRecording(false)}
         />
       )}
-    </div>
+    </>
   );
 }
 
