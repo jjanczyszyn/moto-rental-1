@@ -10,6 +10,7 @@ import { Seasonality } from "../admin/Seasonality";
 import { Settlement } from "../admin/Settlement";
 import { Reports } from "../admin/Reports";
 import { Settings } from "../admin/Settings";
+import { SectionErrorBoundary } from "../admin/shared";
 
 // Server-side auth: each owner has their own password env var
 // (ADMIN_KAREN_PASSWORD / ADMIN_JJ_PASSWORD). Login submits the typed
@@ -171,18 +172,25 @@ export function AdminScreen() {
   if (!authed || !token) return <LoginGate onSubmit={tryPassword} />;
 
   const sectionProps = { year, monthIdx0, setYear, setMonth: setMonthIdx0 };
-  let body: React.ReactNode;
+  let inner: React.ReactNode;
   switch (tab) {
-    case "dashboard":   body = <Dashboard {...sectionProps} />; break;
-    case "bookings":    body = <Bookings adminToken={token} />; break;
-    case "motorcycles": body = <Motorcycles adminToken={token} />; break;
-    case "revenue":     body = <Revenue year={year} setYear={setYear} />; break;
-    case "payments":    body = <Payments adminToken={token} {...sectionProps} />; break;
-    case "seasonality": body = <Seasonality year={year} setYear={setYear} />; break;
-    case "settlement":  body = <Settlement adminToken={token} {...sectionProps} />; break;
-    case "reports":     body = <Reports year={year} setYear={setYear} />; break;
-    case "settings":    body = <Settings adminToken={token} />; break;
+    case "dashboard":   inner = <Dashboard {...sectionProps} />; break;
+    case "bookings":    inner = <Bookings adminToken={token} />; break;
+    case "motorcycles": inner = <Motorcycles adminToken={token} />; break;
+    case "revenue":     inner = <Revenue year={year} setYear={setYear} />; break;
+    case "payments":    inner = <Payments adminToken={token} {...sectionProps} />; break;
+    case "seasonality": inner = <Seasonality year={year} setYear={setYear} />; break;
+    case "settlement":  inner = <Settlement adminToken={token} {...sectionProps} />; break;
+    case "reports":     inner = <Reports year={year} setYear={setYear} />; break;
+    case "settings":    inner = <Settings adminToken={token} />; break;
   }
+  // `key={tab}` resets the boundary each time the user switches tabs so a
+  // recovered error on one tab doesn't carry over to the next.
+  const body = (
+    <SectionErrorBoundary key={tab} sectionName={TAB_LABELS[tab]}>
+      {inner}
+    </SectionErrorBoundary>
+  );
 
   const username = (session && session.ok && session.username) ? session.username : null;
 

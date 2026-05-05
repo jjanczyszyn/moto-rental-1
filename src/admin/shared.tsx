@@ -253,6 +253,44 @@ export function BarChart({
   );
 }
 
+// Catches Convex query/mutation errors so a single broken tab doesn't blank
+// out the whole admin shell. Most useful in prod right after a frontend
+// deploy that landed before `npx convex deploy` — the new function exists
+// in the bundle but not on the Convex deployment yet, so useQuery throws.
+export class SectionErrorBoundary extends React.Component<
+  { children: React.ReactNode; sectionName: string },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error) {
+    console.error("[admin]", error);
+  }
+  reset = () => this.setState({ error: null });
+  render() {
+    if (this.state.error) {
+      const msg = this.state.error.message ?? String(this.state.error);
+      const isMissingFunction = /Could not find|FunctionNotFound|Server Error/i.test(msg);
+      return (
+        <div style={{ ...cardStyle, borderColor: "#fecaca", background: "#fef2f2" }}>
+          <div style={{ fontWeight: 600, color: "#991b1b", marginBottom: 6 }}>
+            {this.props.sectionName} couldn’t load
+          </div>
+          <div style={{ fontSize: 13, color: "#7f1d1d", lineHeight: 1.5 }}>
+            {isMissingFunction
+              ? "This section needs a Convex backend update. Run `npx convex deploy` against prod, then reload."
+              : msg}
+          </div>
+          <button onClick={this.reset} style={{ ...btnGhost, marginTop: 12 }}>Retry</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Confirmable button — reduces accidental destructive clicks.
 export function ConfirmButton({
   label, confirmLabel = "Confirm?", onConfirm, style,
