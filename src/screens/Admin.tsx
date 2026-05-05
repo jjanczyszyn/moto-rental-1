@@ -10,7 +10,7 @@ import { Seasonality } from "../admin/Seasonality";
 import { Settlement } from "../admin/Settlement";
 import { Reports } from "../admin/Reports";
 import { Settings } from "../admin/Settings";
-import { SectionErrorBoundary } from "../admin/shared";
+import { SectionErrorBoundary, useIsMobile } from "../admin/shared";
 
 // Server-side auth: each owner has their own password env var
 // (ADMIN_KAREN_PASSWORD / ADMIN_JJ_PASSWORD). Login submits the typed
@@ -168,6 +168,7 @@ export function AdminScreen() {
   const today = new Date();
   const [year, setYear] = React.useState(today.getFullYear());
   const [monthIdx0, setMonthIdx0] = React.useState(today.getMonth());
+  const mobile = useIsMobile();
 
   if (!authed || !token) return <LoginGate onSubmit={tryPassword} />;
 
@@ -198,29 +199,34 @@ export function AdminScreen() {
     <div style={{ minHeight: "100dvh", background: "#fafafa", paddingBottom: 60 }}>
       <header style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "16px 24px", borderBottom: "1px solid var(--line)",
+        padding: mobile ? "12px 16px" : "16px 24px",
+        borderBottom: "1px solid var(--line)",
         background: "#fff", flexWrap: "wrap", gap: 12,
       }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>Karen & JJ Admin</div>
-          <div style={{ fontSize: 12, color: "var(--muted)" }}>Business cockpit</div>
+          <div style={{ fontSize: mobile ? 18 : 22, fontWeight: 700 }}>Karen & JJ Admin</div>
+          {!mobile && (
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>Business cockpit</div>
+          )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {username && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {username && !mobile && (
             <span style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
               Signed in as <strong style={{ color: "var(--ink)" }}>{username}</strong>
             </span>
           )}
           <button onClick={logout} style={{
-            padding: "8px 12px", borderRadius: 8, border: "1px solid var(--line)",
-            background: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>Sign out</button>
+            padding: "7px 12px", borderRadius: 8, border: "1px solid var(--line)",
+            background: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+          }}>{mobile && username ? `Sign out (${username})` : "Sign out"}</button>
         </div>
       </header>
       <nav style={{
-        display: "flex", gap: 4, padding: "8px 24px",
+        display: "flex", gap: 4,
+        padding: mobile ? "8px 12px" : "8px 24px",
         borderBottom: "1px solid var(--line)", background: "#fff",
         overflowX: "auto", whiteSpace: "nowrap",
+        WebkitOverflowScrolling: "touch",
       }}>
         {TABS.map((t) => (
           <button
@@ -231,13 +237,17 @@ export function AdminScreen() {
               background: tab === t ? "var(--ink)" : "transparent",
               color: tab === t ? "#fff" : "var(--ink-2)",
               fontSize: 13, fontWeight: 600, cursor: "pointer",
+              flex: "0 0 auto",
             }}
           >
             {TAB_LABELS[t]}
           </button>
         ))}
       </nav>
-      <main style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 20px" }}>
+      <main style={{
+        maxWidth: 1180, margin: "0 auto",
+        padding: mobile ? "16px 12px" : "24px 20px",
+      }}>
         {body}
       </main>
     </div>

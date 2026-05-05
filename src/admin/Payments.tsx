@@ -6,7 +6,7 @@ import {
   StatusPill, fmtUSD, fmtPct, fmtDate, btnPrimary, btnGhost, inputStyle,
   labelStyle, tableWrap, tableStyle, thStyle, tdStyle, monthBoundsISO,
   monthLabelLong, PARTNERS, PAYMENT_TYPES, PAYMENT_STATUSES, ConfirmButton,
-  cardStyle,
+  cardStyle, useIsMobile, mobileCard, mobileLabel, mobileValue,
 } from "./shared";
 import { Doc } from "../../convex/_generated/dataModel";
 
@@ -30,6 +30,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
   const removePayment = useMutation(api.payments.remove);
   const updatePayment = useMutation(api.payments.update);
   const [recordFor, setRecordFor] = React.useState<Id<"reservations"> | null>(null);
+  const mobile = useIsMobile();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -47,35 +48,37 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Payment method summary</div>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Method</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>% of revenue</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>JJ collected</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Karen collected</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Payments</th>
-              <th style={thStyle}>Default collector</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(summary?.rows ?? []).map((row) => (
-              <tr key={row.method}>
-                <td style={tdStyle}><strong>{row.label}</strong></td>
-                <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(row.amount)}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{fmtPct(row.percent)}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(row.jjAmount)}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(row.karenAmount)}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{row.count}</td>
-                <td style={tdStyle}>{row.defaultCollector ?? "—"}</td>
+        <div style={{ overflowX: "auto", margin: "0 -16px", padding: "0 16px" }}>
+          <table style={{ ...tableStyle, minWidth: mobile ? 600 : undefined }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Method</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>%</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>JJ</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Karen</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>#</th>
+                <th style={thStyle}>Default</th>
               </tr>
-            ))}
-            {summary && summary.rows.length === 0 && (
-              <tr><td colSpan={7} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)" }}>No payments this month.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(summary?.rows ?? []).map((row) => (
+                <tr key={row.method}>
+                  <td style={tdStyle}><strong>{row.label}</strong></td>
+                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(row.amount)}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{fmtPct(row.percent)}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(row.jjAmount)}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(row.karenAmount)}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{row.count}</td>
+                  <td style={tdStyle}>{row.defaultCollector ?? "—"}</td>
+                </tr>
+              ))}
+              {summary && summary.rows.length === 0 && (
+                <tr><td colSpan={7} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)" }}>No payments this month.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -98,6 +101,51 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
         </select>
       </div>
 
+      {mobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {(allPayments ?? []).map((p) => {
+            const r = (reservations ?? []).find((rr) => rr._id === p.reservationId);
+            return (
+              <div key={p._id} style={mobileCard}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{fmtUSD(p.amount)}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                      {p.method} · {p.collectedBy}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <PaymentStatusEditor
+                      payment={p}
+                      onChange={(status) => updatePayment({ adminToken, paymentId: p._id, status })}
+                    />
+                    <StatusPill status={p.paymentType} />
+                  </div>
+                </div>
+                {r && (
+                  <div style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>{r.code}</span>
+                    {" · "}
+                    {r.docFirstName} {r.docLastName}
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                  {p.receivedAt ? fmtDate(new Date(p.receivedAt).toISOString()) : "—"}
+                  {p.notes ? ` · ${p.notes}` : ""}
+                </div>
+                <div>
+                  <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                </div>
+              </div>
+            );
+          })}
+          {allPayments && allPayments.length === 0 && (
+            <div style={{ ...mobileCard, textAlign: "center", color: "var(--muted)" }}>
+              No payments this month.
+            </div>
+          )}
+        </div>
+      ) : (
       <div style={tableWrap}>
         <table style={tableStyle}>
           <thead>
@@ -150,6 +198,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
           </tbody>
         </table>
       </div>
+      )}
 
       {recordFor && (
         <RecordPaymentModal

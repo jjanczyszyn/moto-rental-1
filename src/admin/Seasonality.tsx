@@ -68,7 +68,7 @@ export function Seasonality({ year, setYear }: Props) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
         <div style={tableWrap}>
           <div style={{ padding: "10px 12px", background: "#fafafa", borderBottom: "1px solid var(--line)", fontWeight: 600, fontSize: 13 }}>Best months</div>
           <table style={tableStyle}>

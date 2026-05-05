@@ -98,8 +98,52 @@ export const cardStyle: React.CSSProperties = {
 export const tableWrap: React.CSSProperties = {
   border: "1px solid var(--line)",
   borderRadius: 12,
-  overflow: "hidden",
+  overflowX: "auto",
+  overflowY: "hidden",
   background: "#fff",
+  WebkitOverflowScrolling: "touch",
+};
+
+// Mobile-first detection. Admin sections render card layouts under this
+// breakpoint and tables above it.
+export function useIsMobile(breakpoint = 760): boolean {
+  const [mob, setMob] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(`(max-width: ${breakpoint}px)`).matches;
+  });
+  React.useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const onChange = (e: MediaQueryListEvent) => setMob(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [breakpoint]);
+  return mob;
+}
+
+// Card row used inside the mobile views — one record per card with a
+// header row of label/value pairs.
+export const mobileCard: React.CSSProperties = {
+  padding: 14,
+  border: "1px solid var(--line)",
+  borderRadius: 12,
+  background: "#fff",
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+};
+
+export const mobileLabel: React.CSSProperties = {
+  fontSize: 10,
+  color: "var(--muted)",
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+  fontWeight: 600,
+};
+
+export const mobileValue: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 500,
+  marginTop: 2,
 };
 
 export const tableStyle: React.CSSProperties = {

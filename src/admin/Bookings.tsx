@@ -5,7 +5,8 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import {
   StatusPill, fmtUSD, fmtDate, fmtDateShort, btnPrimary, btnGhost, inputStyle,
   labelStyle, tableWrap, tableStyle, thStyle, tdStyle, RESERVATION_STATUSES,
-  SOURCE_OPTIONS, isoToday, ConfirmButton,
+  SOURCE_OPTIONS, isoToday, ConfirmButton, useIsMobile, mobileCard, mobileLabel,
+  mobileValue,
 } from "./shared";
 import { RecordPaymentModal, PaymentStatusEditor } from "./Payments";
 
@@ -35,6 +36,7 @@ export function Bookings({ adminToken }: Props) {
     }
   );
   const setStatus = useMutation(api.reservations.setStatus);
+  const mobile = useIsMobile();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -58,6 +60,68 @@ export function Bookings({ adminToken }: Props) {
         />
       )}
 
+      {mobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {(bookings ?? []).map((r) => {
+            const isOpen = expanded.has(r._id);
+            return (
+              <div key={r._id} style={mobileCard}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{r.docFirstName} {r.docLastName}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "JetBrains Mono, monospace" }}>{r.code}</div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <StatusPill status={r.status} />
+                    <StatusPill status={r.payStatus} />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <div style={mobileLabel}>Bike</div>
+                    <div style={mobileValue}>{r.bike ? `${r.bike.name} ${r.bike.color}` : "—"}</div>
+                  </div>
+                  <div>
+                    <div style={mobileLabel}>Dates</div>
+                    <div style={mobileValue}>{fmtDateShort(r.startDate)} → {fmtDateShort(r.endDate)}</div>
+                  </div>
+                  <div>
+                    <div style={mobileLabel}>Total</div>
+                    <div style={mobileValue}>{fmtUSD(r.totalUSD)} <span style={{ color: "var(--muted)", fontSize: 11 }}>· {r.days}d</span></div>
+                  </div>
+                  <div>
+                    <div style={mobileLabel}>Paid</div>
+                    <div style={mobileValue}>{fmtUSD(r.paid)}</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <select
+                    value={r.status}
+                    onChange={(e) => setStatus({ id: r._id, status: e.target.value as any, adminToken })}
+                    style={{ ...inputStyle, fontSize: 12, padding: "6px 8px", flex: 1, minWidth: 110 }}
+                  >
+                    {RESERVATION_STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}
+                  </select>
+                  <button style={btnGhost} onClick={() => setEditing(r._id)}>Edit</button>
+                  <button style={btnGhost} onClick={() => toggleExpanded(r._id)}>
+                    {isOpen ? "Hide payments" : "Payments"}
+                  </button>
+                </div>
+                {isOpen && (
+                  <div style={{ marginTop: 4, paddingTop: 10, borderTop: "1px solid var(--line-2)" }}>
+                    <BookingPaymentsPanel reservationId={r._id} adminToken={adminToken} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {bookings && bookings.length === 0 && (
+            <div style={{ ...mobileCard, textAlign: "center", color: "var(--muted)" }}>
+              No bookings match these filters.
+            </div>
+          )}
+        </div>
+      ) : (
       <div style={tableWrap}>
         <table style={tableStyle}>
           <thead>
@@ -140,6 +204,7 @@ export function Bookings({ adminToken }: Props) {
           </tbody>
         </table>
       </div>
+      )}
 
       {editing && (
         <EditBookingForm

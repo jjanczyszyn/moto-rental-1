@@ -139,12 +139,12 @@ function ReportCard({
   title, description, onExport,
 }: { title: string; description: string; onExport: () => void }) {
   return (
-    <div style={{ ...cardStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <div>
+    <div style={{ ...cardStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ flex: "1 1 220px", minWidth: 0 }}>
         <div style={{ fontWeight: 600 }}>{title}</div>
         <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>{description}</div>
       </div>
-      <button style={btnPrimary} onClick={onExport}>Export CSV</button>
+      <button style={{ ...btnPrimary, flex: "0 0 auto" }} onClick={onExport}>Export CSV</button>
     </div>
   );
 }
