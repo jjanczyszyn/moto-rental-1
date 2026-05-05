@@ -3,10 +3,11 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import {
-  StatusPill, fmtUSD, fmtDateShort, btnPrimary, btnGhost, inputStyle,
+  StatusPill, fmtUSD, fmtDate, fmtDateShort, btnPrimary, btnGhost, inputStyle,
   labelStyle, tableWrap, tableStyle, thStyle, tdStyle, RESERVATION_STATUSES,
-  SOURCE_OPTIONS, isoToday,
+  SOURCE_OPTIONS, isoToday, ConfirmButton,
 } from "./shared";
+import { RecordPaymentModal, PaymentStatusEditor } from "./Payments";
 
 interface Props { adminToken: string; }
 
@@ -242,6 +243,13 @@ function EditBookingForm({
     setEndDate(r.endDate);
   }, [r]);
 
+  // Payments-for-this-booking subview. Reads live so that recording or
+  // editing a payment in the modal updates the visible list immediately.
+  const payments = useQuery(api.payments.listForReservation, { reservationId });
+  const removePayment = useMutation(api.payments.remove);
+  const updatePayment = useMutation(api.payments.update);
+  const [recording, setRecording] = React.useState(false);
+
   if (!r) return null;
   const submit = async () => {
     setBusy(true); setErr("");
@@ -289,9 +297,63 @@ function EditBookingForm({
         {err && <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>{err}</div>}
         <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button style={btnGhost} onClick={onClose}>Cancel</button>
-          <button style={btnPrimary} disabled={busy} onClick={submit}>{busy ? "Saving…" : "Save"}</button>
+          <button style={btnPrimary} disabled={busy} onClick={submit}>{busy ? "Saving…" : "Save booking"}</button>
+        </div>
+
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <strong>Payments ({payments?.length ?? 0})</strong>
+            <button style={btnPrimary} onClick={() => setRecording(true)}>+ Record payment</button>
+          </div>
+          {payments && payments.length === 0 && (
+            <div style={{ fontSize: 13, color: "var(--muted)" }}>No payments recorded for this booking yet.</div>
+          )}
+          {payments && payments.length > 0 && (
+            <div style={tableWrap}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Received</th>
+                    <th style={thStyle}>Method</th>
+                    <th style={thStyle}>Type</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
+                    <th style={thStyle}>Collected by</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p._id}>
+                      <td style={tdStyle}>{p.receivedAt ? fmtDate(new Date(p.receivedAt).toISOString()) : "—"}</td>
+                      <td style={tdStyle}>{p.method}</td>
+                      <td style={tdStyle}><StatusPill status={p.paymentType} /></td>
+                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(p.amount)}</td>
+                      <td style={tdStyle}>{p.collectedBy}</td>
+                      <td style={tdStyle}>
+                        <PaymentStatusEditor
+                          payment={p}
+                          onChange={(status) => updatePayment({ adminToken, paymentId: p._id, status })}
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
+      {recording && (
+        <RecordPaymentModal
+          reservationId={reservationId}
+          adminToken={adminToken}
+          onClose={() => setRecording(false)}
+        />
+      )}
     </div>
   );
 }

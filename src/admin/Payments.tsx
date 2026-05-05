@@ -162,7 +162,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
   );
 }
 
-function RecordPaymentModal({
+export function RecordPaymentModal({
   reservationId, adminToken, onClose,
 }: { reservationId: Id<"reservations">; adminToken: string; onClose: () => void }) {
   const cfg = useQuery(api.config.get);
@@ -287,7 +287,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // Inline status select. Wears the StatusPill colours so the table still
 // reads at a glance, but lets the manager change "pending" → "received"
 // (or "refunded", etc.) without leaving the page.
-function PaymentStatusEditor({
+export function PaymentStatusEditor({
   payment, onChange,
 }: {
   payment: Doc<"payments">;
