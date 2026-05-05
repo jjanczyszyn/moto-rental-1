@@ -129,6 +129,16 @@ export const update = mutation({
     for (const [k, val] of Object.entries(patch)) {
       if (val !== undefined) next[k] = val;
     }
+    // Flipping a payment to "received" without a timestamp would silently
+    // drop it from period-bound revenue queries (those filter on
+    // receivedAt). Default to now if the admin didn't pass one.
+    if (
+      patch.status === "received" &&
+      existing.receivedAt === undefined &&
+      patch.receivedAt === undefined
+    ) {
+      next.receivedAt = Date.now();
+    }
     await ctx.db.patch(paymentId, next);
   },
 });

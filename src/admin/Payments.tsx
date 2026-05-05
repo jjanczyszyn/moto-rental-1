@@ -8,6 +8,7 @@ import {
   monthLabelLong, PARTNERS, PAYMENT_TYPES, PAYMENT_STATUSES, ConfirmButton,
   cardStyle,
 } from "./shared";
+import { Doc } from "../../convex/_generated/dataModel";
 
 interface Props {
   adminToken: string;
@@ -27,6 +28,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
   });
   const reservations = useQuery(api.reservations.list, {});
   const removePayment = useMutation(api.payments.remove);
+  const updatePayment = useMutation(api.payments.update);
   const [recordFor, setRecordFor] = React.useState<Id<"reservations"> | null>(null);
 
   return (
@@ -129,7 +131,12 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
                   <td style={tdStyle}><StatusPill status={p.paymentType} /></td>
                   <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(p.amount)}</td>
                   <td style={tdStyle}>{p.collectedBy}</td>
-                  <td style={tdStyle}><StatusPill status={p.status} /></td>
+                  <td style={tdStyle}>
+                    <PaymentStatusEditor
+                      payment={p}
+                      onChange={(status) => updatePayment({ adminToken, paymentId: p._id, status })}
+                    />
+                  </td>
                   <td style={{ ...tdStyle, fontSize: 12, color: "var(--muted)" }}>{p.notes ?? ""}</td>
                   <td style={tdStyle}>
                     <ConfirmButton label="Delete" confirmLabel="Sure?" onConfirm={() => removePayment({ adminToken, paymentId: p._id })} />
@@ -274,5 +281,46 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={labelStyle}>{label}</span>
       {children}
     </label>
+  );
+}
+
+// Inline status select. Wears the StatusPill colours so the table still
+// reads at a glance, but lets the manager change "pending" → "received"
+// (or "refunded", etc.) without leaving the page.
+function PaymentStatusEditor({
+  payment, onChange,
+}: {
+  payment: Doc<"payments">;
+  onChange: (status: typeof PAYMENT_STATUSES[number]) => Promise<unknown>;
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const colors: Record<string, [string, string]> = {
+    received: ["#d1fae5", "#065f46"],
+    pending: ["#fef3c7", "#92400e"],
+    failed: ["#fee2e2", "#991b1b"],
+    cancelled: ["#fee2e2", "#991b1b"],
+    refunded: ["#fce7f3", "#9d174d"],
+  };
+  const [bg, fg] = colors[payment.status] ?? ["#f3f4f6", "#374151"];
+  return (
+    <select
+      value={payment.status}
+      disabled={busy}
+      onChange={async (e) => {
+        const next = e.target.value as typeof PAYMENT_STATUSES[number];
+        if (next === payment.status) return;
+        setBusy(true);
+        try { await onChange(next); } finally { setBusy(false); }
+      }}
+      style={{
+        padding: "2px 8px", borderRadius: 999,
+        background: bg, color: fg,
+        fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5,
+        border: "1px solid transparent", cursor: busy ? "wait" : "pointer",
+        appearance: "none", paddingRight: 18,
+      }}
+    >
+      {PAYMENT_STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}
+    </select>
   );
 }
