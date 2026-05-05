@@ -16,8 +16,8 @@ export const all = mutation({
       { id: "revolut", label: "Revolut", sub: "@justynshx", detail: ["Send to @justynshx via Revolut."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
       { id: "card", label: "Debit/credit card", sub: "Any Visa or Mastercard", detail: ["Pay with any debit or credit card on the hosted Revolut page — no account needed."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
       { id: "applepay", label: "Apple Pay", sub: "One tap on iPhone", detail: ["Tap Apple Pay on the hosted Revolut page."], enabled: true, url: "https://revolut.me/justynshx", defaultCollector: "JJ" as const },
-      { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing", detail: ["Beneficiary: Justyna Janczyszyn", "Routing: 026073150", "Account: 822000215918"], enabled: true, defaultCollector: "JJ" as const },
-      { id: "transfer-eur", label: "Bank transfer · EUR", sub: "IBAN (Belgium)", detail: ["Beneficiary: Justyna Janczyszyn", "IBAN: BE06 9671 9692 5322"], enabled: true, defaultCollector: "JJ" as const },
+      { id: "transfer-usd", label: "Bank transfer · USD", sub: "US routing — details by email", detail: ["Pick this option and we'll email you the wire details (beneficiary, routing, account number) within a few minutes."], enabled: true, defaultCollector: "JJ" as const },
+      { id: "transfer-eur", label: "Bank transfer · EUR", sub: "IBAN — details by email", detail: ["Pick this option and we'll email you the IBAN and beneficiary details within a few minutes."], enabled: true, defaultCollector: "JJ" as const },
     ];
     const cfg = await ctx.db.query("config").first();
     if (!cfg) {
