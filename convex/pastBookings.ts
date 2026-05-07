@@ -19,6 +19,10 @@ interface Entry {
   method: string;
   collectedBy: Collector;
   note?: string;
+  // Defaults to "returned". Override for paid-but-not-yet-completed
+  // bookings ("confirmed") or anything else outside the typical past-record
+  // shape.
+  status?: "pending" | "confirmed" | "active" | "returned" | "cancelled";
 }
 
 // genesis azul → genesis-blue, genesis Rosa → genesis-red, Yamaha → yamaha-xt.
@@ -93,6 +97,16 @@ const ENTRIES: Entry[] = [
   { firstName: "Johannes", lastName: "Scherer", slug: "genesis-blue", start: "2026-05-02", end: "2026-05-05", total: 60, method: "cash", collectedBy: "Karen" },
   { firstName: "Angel", lastName: "Z", slug: "genesis-red", start: "2026-05-03", end: "2026-05-05", total: 40, method: "cash", collectedBy: "Karen" },
   { firstName: "Francois", lastName: "Corentin", slug: "yamaha-xt", start: "2026-01-17", end: "2026-01-24", total: 120, method: "cash", collectedBy: "Karen" },
+
+  // Antony Tester · Yamaha · 18/05/25 → 24/05/25 · $120 (1 week).
+  { firstName: "Antony", lastName: "Tester", slug: "yamaha-xt", start: "2025-05-18", end: "2025-05-24", total: 120, method: "cash", collectedBy: "Karen" },
+  // Roli Tailed (spelled "Tailer" in this entry — same customer as the
+  // earlier 03/06/25 booking; using the prior spelling for consistency).
+  { firstName: "Roli", lastName: "Tailed", slug: "yamaha-xt", start: "2025-05-25", end: "2025-05-28", total: 60, method: "cash", collectedBy: "Karen" },
+  // Vojieten · Yamaha · 11/05/26 → 17/05/26 (start year was "22" in source;
+  // assumed typo for "26"). Paid $350 via PayPal to JJ. Booking is upcoming
+  // as of today, so status="confirmed" rather than "returned".
+  { firstName: "Vojieten", lastName: "Ksvarik", slug: "yamaha-xt", start: "2026-05-11", end: "2026-05-17", total: 350, method: "paypal", collectedBy: "JJ", status: "confirmed", note: "Source said start 11/05/22 — assumed typo for 11/05/26. $350 PayPal upfront (special rate)." },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -189,7 +203,7 @@ export const importHistorical = mutation({
       const now = Date.now();
       const reservationId = await ctx.db.insert("reservations", {
         code,
-        status: "returned",
+        status: e.status ?? "returned",
         bikeId: bike._id,
         startDate: e.start,
         endDate: e.end,
