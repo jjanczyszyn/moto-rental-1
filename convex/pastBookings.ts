@@ -122,6 +122,63 @@ function genCode(): string {
   return `KJ-${pick(4)}-${Math.floor(Math.random() * 900 + 100)}`;
 }
 
+// One-off helper. Records a single received payment against a reservation
+// looked up by code. Used when a customer-flow booking landed in the DB
+// and Karen/JJ collected payment off-system afterwards.
+export const recordPaymentByCode = mutation({
+  args: {
+    code: v.string(),
+    amount: v.number(),
+    method: v.string(),
+    collectedBy: v.union(v.literal("JJ"), v.literal("Karen")),
+    receivedAtISO: v.optional(v.string()), // YYYY-MM-DD; defaults to today
+    notes: v.optional(v.string()),
+    setSource: v.optional(v.string()), // also update reservation.source if given
+  },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db
+      .query("reservations")
+      .withIndex("by_code", (q) => q.eq("code", args.code))
+      .first();
+    if (!reservation) return { recorded: false, reason: "Not found" };
+
+    const receivedAt = args.receivedAtISO
+      ? Date.parse(args.receivedAtISO + "T12:00:00Z")
+      : Date.now();
+    const now = Date.now();
+    const paymentId = await ctx.db.insert("payments", {
+      reservationId: reservation._id,
+      amount: args.amount,
+      currency: "USD",
+      method: args.method,
+      collectedBy: args.collectedBy,
+      paymentType: "full_payment",
+      status: "received",
+      receivedAt,
+      notes: args.notes,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    if (args.setSource !== undefined) {
+      await ctx.db.patch(reservation._id, {
+        source: args.setSource,
+        updatedAt: now,
+      });
+    }
+
+    return {
+      recorded: true,
+      paymentId,
+      code: args.code,
+      name: `${reservation.docFirstName} ${reservation.docLastName}`.trim(),
+      amount: args.amount,
+      method: args.method,
+      collectedBy: args.collectedBy,
+    };
+  },
+});
+
 // One-off cleanup. Updates the totalUSD of a reservation by code. Used
 // when the manager corrects a price after the booking already exists.
 export const setTotalByCode = mutation({
