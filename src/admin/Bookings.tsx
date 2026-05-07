@@ -89,10 +89,10 @@ const ALL_COLUMNS: BookingColumn[] = [
     ) },
   { id: "startDate", label: "Start", defaultVisible: true, sortable: true,
     accessor: (r) => r.startDate,
-    render: (r) => fmtDateShort(r.startDate) },
+    render: (r) => fmtDate(r.startDate) },
   { id: "endDate", label: "End", defaultVisible: true, sortable: true,
     accessor: (r) => r.endDate,
-    render: (r) => fmtDateShort(r.endDate) },
+    render: (r) => fmtDate(r.endDate) },
   { id: "days", label: "Days", defaultVisible: false, align: "right", sortable: true,
     accessor: (r) => r.days,
     render: (r) => r.days },
@@ -348,7 +348,7 @@ export function Bookings({ adminToken }: Props) {
                   </div>
                   <div>
                     <div style={mobileLabel}>Dates</div>
-                    <div style={mobileValue}>{fmtDateShort(r.startDate)} → {fmtDateShort(r.endDate)}</div>
+                    <div style={mobileValue}>{fmtDate(r.startDate)} → {fmtDate(r.endDate)}</div>
                   </div>
                   <div>
                     <div style={mobileLabel}>Total</div>
