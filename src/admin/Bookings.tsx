@@ -29,13 +29,26 @@ export function Bookings({ adminToken }: Props) {
     });
   };
 
-  const bookings = useQuery(
+  // Cancelled bookings clutter the working view. Default the toggle on so
+  // the manager only sees bookings that still matter; flip off to audit
+  // everything (and the explicit status="cancelled" filter still works).
+  const [hideCancelled, setHideCancelled] = React.useState(true);
+
+  const rawBookings = useQuery(
     api.reservations.listForAdmin,
     {
       status: statusFilter || undefined,
       source: sourceFilter || undefined,
     }
   );
+  const bookings = React.useMemo(() => {
+    if (!rawBookings) return rawBookings;
+    if (!hideCancelled) return rawBookings;
+    if (statusFilter === "cancelled") return rawBookings; // user asked for them
+    return rawBookings.filter((r) => r.status !== "cancelled");
+  }, [rawBookings, hideCancelled, statusFilter]);
+  const cancelledHidden = (rawBookings?.length ?? 0) - (bookings?.length ?? 0);
+
   const setStatus = useMutation(api.reservations.setStatus);
   const mobile = useIsMobile();
 
@@ -51,6 +64,21 @@ export function Bookings({ adminToken }: Props) {
           <option value="">All sources</option>
           {SOURCE_OPTIONS.map((s) => (<option key={s} value={s}>{s.replace("_", " ")}</option>))}
         </select>
+        <button
+          type="button"
+          onClick={() => setHideCancelled((v) => !v)}
+          aria-pressed={hideCancelled}
+          title={hideCancelled ? "Click to show cancelled bookings" : "Click to hide cancelled bookings"}
+          style={{
+            ...(hideCancelled ? btnPrimary : btnGhost),
+            display: "inline-flex", alignItems: "center", gap: 6,
+          }}
+        >
+          {hideCancelled ? "✓ " : ""}Hide cancelled
+          {hideCancelled && cancelledHidden > 0 && (
+            <span style={{ opacity: 0.7, fontSize: 11 }}>({cancelledHidden})</span>
+          )}
+        </button>
         <button style={{ ...btnPrimary, marginLeft: "auto" }} onClick={() => setShowNew(true)}>+ New booking</button>
       </header>
 
