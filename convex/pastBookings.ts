@@ -89,6 +89,9 @@ const ENTRIES: Entry[] = [
   // bike (one record each at the weekly rate).
   { firstName: "Nacho", lastName: "", slug: "genesis-blue", start: "2026-04-02", end: "2026-04-09", total: 120, method: "paypal", collectedBy: "JJ", note: "Group booking 1 of 2 bikes ($240 PayPal split across both)" },
   { firstName: "Nacho", lastName: "", slug: "genesis-red", start: "2026-04-02", end: "2026-04-09", total: 120, method: "paypal", collectedBy: "JJ", note: "Group booking 2 of 2 bikes ($240 PayPal split across both)" },
+
+  { firstName: "Johannes", lastName: "Scherer", slug: "genesis-blue", start: "2026-05-02", end: "2026-05-05", total: 60, method: "cash", collectedBy: "Karen" },
+  { firstName: "Angel", lastName: "Z", slug: "genesis-red", start: "2026-05-03", end: "2026-05-05", total: 40, method: "cash", collectedBy: "Karen" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
