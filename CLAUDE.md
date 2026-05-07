@@ -62,7 +62,7 @@ remote, or a deployed asset:
 
 ## Deployment topology (so we don't push to the wrong place)
 
-- **Live site:** `https://moto.justinalydia.com/` (custom domain on GitHub
+- **Live site:** `https://moto.popoyo.co/` (custom domain on GitHub
   Pages, served from `main` via `.github/workflows/deploy.yml`).
 - **Convex prod:** `tough-meadowlark-233` — what the live site reads from.
   Update with `CONVEX_DEPLOY_KEY=<prod key> npx convex deploy`.

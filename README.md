@@ -2,8 +2,8 @@
 
 Customer-facing moto-rental booking flow for Popoyo, Nicaragua.
 
-- **Live site:** [moto.justinalydia.com](https://moto.justinalydia.com/)
-- **Admin panel:** [moto.justinalydia.com/#/admin](https://moto.justinalydia.com/#/admin) — password-gated (owner credentials, see local notes / `src/screens/Admin.tsx`)
+- **Live site:** [moto.popoyo.co](https://moto.popoyo.co/)
+- **Admin panel:** [moto.popoyo.co/#/admin](https://moto.popoyo.co/#/admin) — password-gated (owner credentials, see local notes / `src/screens/Admin.tsx`)
 
 ## Local development
 
@@ -35,7 +35,7 @@ npm run build      # production bundle
 
 ## Deployment topology
 
-- **GitHub Pages**: workflow at `.github/workflows/deploy.yml` builds on push to `main` and serves `moto.justinalydia.com` (custom domain, `public/CNAME`).
+- **GitHub Pages**: workflow at `.github/workflows/deploy.yml` builds on push to `main` and serves `moto.popoyo.co` (custom domain, `public/CNAME`).
 - **Convex prod**: deployment `tough-meadowlark-233`. Live site reads from this. Update with `CONVEX_DEPLOY_KEY=<prod key> npx convex deploy`, then `npx convex run --prod seed:all '{}'` to re-seed bikes / reviews / payment methods.
 - **Convex dev**: deployment `third-kookabura-106`. Local development only — edits in this dashboard do **not** propagate to the live site. See [CLAUDE.md](./CLAUDE.md).
 
