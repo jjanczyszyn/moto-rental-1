@@ -84,6 +84,11 @@ const ENTRIES: Entry[] = [
   { firstName: "Madeline", lastName: "Hatrick", slug: "genesis-red", start: "2025-10-05", end: "2025-10-19", total: 180, method: "cash", collectedBy: "Karen" },
   // Cross-year rental.
   { firstName: "Yael", lastName: "Tenanboin", slug: "genesis-blue", start: "2025-12-28", end: "2026-01-02", total: 100, method: "cash", collectedBy: "Karen" },
+
+  // Nacho — both Genesis bikes for a week, paid $240 via PayPal. Split per
+  // bike (one record each at the weekly rate).
+  { firstName: "Nacho", lastName: "", slug: "genesis-blue", start: "2026-04-02", end: "2026-04-09", total: 120, method: "paypal", collectedBy: "JJ", note: "Group booking 1 of 2 bikes ($240 PayPal split across both)" },
+  { firstName: "Nacho", lastName: "", slug: "genesis-red", start: "2026-04-02", end: "2026-04-09", total: 120, method: "paypal", collectedBy: "JJ", note: "Group booking 2 of 2 bikes ($240 PayPal split across both)" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
