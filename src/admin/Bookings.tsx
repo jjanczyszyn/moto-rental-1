@@ -13,6 +13,128 @@ import type { Doc as ConvexDoc } from "../../convex/_generated/dataModel";
 
 interface Props { adminToken: string; }
 
+// Short, owner-friendly bike label. Maps the seeded fleet to the names the
+// owners actually use day-to-day in Spanish ("Genesis Azul", "Genesis Roja").
+function shortBikeLabel(bike: { name: string; color: string } | null | undefined): string {
+  if (!bike) return "—";
+  if (bike.name.startsWith("Yamaha")) return "Yamaha";
+  if (bike.name.startsWith("Genesis")) {
+    if (bike.color === "Blue") return "Genesis Azul";
+    if (bike.color === "Red") return "Genesis Roja";
+    return `Genesis ${bike.color}`;
+  }
+  return `${bike.name} ${bike.color}`;
+}
+
+const PAY_METHOD_LABELS: Record<string, string> = {
+  cash: "Cash", paypal: "PayPal", wise: "Wise", zelle: "Zelle",
+  venmo: "Venmo", revolut: "Revolut", card: "Card", applepay: "Apple Pay",
+  "transfer-usd": "Bank (USD)", "transfer-eur": "Bank (EUR)",
+};
+function payMethodLabel(id: string | undefined | null): string {
+  if (!id) return "—";
+  return PAY_METHOD_LABELS[id] ?? id;
+}
+
+// Column metadata. id is the persisted key, accessor returns the raw value
+// for sort comparisons, and render is the cell body for each row.
+type Booking = {
+  _id: Id<"reservations">;
+  code: string;
+  docFirstName: string;
+  docLastName: string;
+  phoneCC: string;
+  phoneNum: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  totalUSD: number;
+  paid: number;
+  status: string;
+  payStatus: string;
+  payMethod: string;
+  source?: string;
+  bike: { name: string; color: string; plate: string } | null;
+};
+
+type ColumnId =
+  | "code" | "customer" | "startDate" | "endDate" | "days"
+  | "bike" | "total" | "paid" | "status" | "payMethod"
+  | "payStatus" | "source";
+
+interface BookingColumn {
+  id: ColumnId;
+  label: string;
+  defaultVisible: boolean;
+  align?: "right";
+  sortable?: boolean;
+  // Value used for sort comparisons (string or number).
+  accessor: (r: Booking) => string | number;
+  render: (r: Booking) => React.ReactNode;
+}
+
+const ALL_COLUMNS: BookingColumn[] = [
+  { id: "code", label: "Code", defaultVisible: false, sortable: true,
+    accessor: (r) => r.code,
+    render: (r) => <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>{r.code}</span> },
+  { id: "customer", label: "Customer", defaultVisible: true, sortable: true,
+    accessor: (r) => `${r.docFirstName} ${r.docLastName}`.toLowerCase(),
+    render: (r) => (
+      <>
+        <div style={{ fontWeight: 600 }}>{r.docFirstName} {r.docLastName}</div>
+        {(r.phoneCC || r.phoneNum) && (
+          <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.phoneCC} {r.phoneNum}</div>
+        )}
+      </>
+    ) },
+  { id: "startDate", label: "Start", defaultVisible: true, sortable: true,
+    accessor: (r) => r.startDate,
+    render: (r) => fmtDateShort(r.startDate) },
+  { id: "endDate", label: "End", defaultVisible: true, sortable: true,
+    accessor: (r) => r.endDate,
+    render: (r) => fmtDateShort(r.endDate) },
+  { id: "days", label: "Days", defaultVisible: false, align: "right", sortable: true,
+    accessor: (r) => r.days,
+    render: (r) => r.days },
+  { id: "bike", label: "Moto", defaultVisible: true, sortable: true,
+    accessor: (r) => shortBikeLabel(r.bike).toLowerCase(),
+    render: (r) => shortBikeLabel(r.bike) },
+  { id: "total", label: "Total", defaultVisible: true, align: "right", sortable: true,
+    accessor: (r) => r.totalUSD,
+    render: (r) => <span style={{ fontWeight: 600 }}>{fmtUSD(r.totalUSD)}</span> },
+  { id: "paid", label: "Paid", defaultVisible: true, align: "right", sortable: true,
+    accessor: (r) => r.paid,
+    render: (r) => fmtUSD(r.paid) },
+  { id: "status", label: "Status", defaultVisible: true, sortable: true,
+    accessor: (r) => r.status,
+    render: (r) => <StatusPill status={r.status} /> },
+  { id: "payMethod", label: "Payment", defaultVisible: true, sortable: true,
+    accessor: (r) => r.payMethod,
+    render: (r) => payMethodLabel(r.payMethod) },
+  { id: "payStatus", label: "Pay status", defaultVisible: false, sortable: true,
+    accessor: (r) => r.payStatus,
+    render: (r) => <StatusPill status={r.payStatus} /> },
+  { id: "source", label: "Source", defaultVisible: false, sortable: true,
+    accessor: (r) => r.source ?? "",
+    render: (r) => (r.source ?? "—").replace("_", " ") },
+];
+
+const COLUMN_VISIBILITY_KEY = "kj-admin-bookings-visible-columns";
+const DEFAULT_VISIBLE: ColumnId[] = ALL_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.id);
+
+function loadVisibleColumns(): Set<ColumnId> {
+  try {
+    const raw = window.localStorage.getItem(COLUMN_VISIBILITY_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ColumnId[];
+      if (Array.isArray(parsed) && parsed.length > 0) return new Set(parsed);
+    }
+  } catch {
+    // fall through
+  }
+  return new Set(DEFAULT_VISIBLE);
+}
+
 export function Bookings({ adminToken }: Props) {
   const [statusFilter, setStatusFilter] = React.useState<string>("");
   const [sourceFilter, setSourceFilter] = React.useState<string>("");
@@ -41,16 +163,67 @@ export function Bookings({ adminToken }: Props) {
       source: sourceFilter || undefined,
     }
   );
-  const bookings = React.useMemo(() => {
+  const filteredBookings = React.useMemo(() => {
     if (!rawBookings) return rawBookings;
     if (!hideCancelled) return rawBookings;
     if (statusFilter === "cancelled") return rawBookings; // user asked for them
     return rawBookings.filter((r) => r.status !== "cancelled");
   }, [rawBookings, hideCancelled, statusFilter]);
-  const cancelledHidden = (rawBookings?.length ?? 0) - (bookings?.length ?? 0);
+  const cancelledHidden = (rawBookings?.length ?? 0) - (filteredBookings?.length ?? 0);
+
+  // Sort + column-visibility state. Both persist across reloads via
+  // localStorage so the manager sees the same view next time.
+  const [sortBy, setSortBy] = React.useState<ColumnId>("startDate");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+  const [visibleColumns, setVisibleColumns] = React.useState<Set<ColumnId>>(() => loadVisibleColumns());
+  const [showColumnPicker, setShowColumnPicker] = React.useState(false);
+
+  React.useEffect(() => {
+    window.localStorage.setItem(
+      COLUMN_VISIBILITY_KEY,
+      JSON.stringify(Array.from(visibleColumns))
+    );
+  }, [visibleColumns]);
+
+  const toggleColumn = (id: ColumnId) => {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const resetColumns = () => setVisibleColumns(new Set(DEFAULT_VISIBLE));
+
+  const handleSort = (id: ColumnId) => {
+    setSortBy((prev) => {
+      if (prev === id) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
+      setSortDir("asc");
+      return id;
+    });
+  };
+
+  const bookings = React.useMemo(() => {
+    if (!filteredBookings) return filteredBookings;
+    const col = ALL_COLUMNS.find((c) => c.id === sortBy);
+    if (!col) return filteredBookings;
+    const arr = [...filteredBookings];
+    arr.sort((a, b) => {
+      const av = col.accessor(a as Booking);
+      const bv = col.accessor(b as Booking);
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filteredBookings, sortBy, sortDir]);
 
   const setStatus = useMutation(api.reservations.setStatus);
   const mobile = useIsMobile();
+  const visibleCols = ALL_COLUMNS.filter((c) => visibleColumns.has(c.id));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -79,6 +252,49 @@ export function Bookings({ adminToken }: Props) {
             <span style={{ opacity: 0.7, fontSize: 11 }}>({cancelledHidden})</span>
           )}
         </button>
+        {!mobile && (
+          <div style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={() => setShowColumnPicker((v) => !v)}
+              style={btnGhost}
+              title="Choose visible columns"
+            >
+              Columns ({visibleColumns.size})
+            </button>
+            {showColumnPicker && (
+              <>
+                <div
+                  onClick={() => setShowColumnPicker(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 20 }}
+                />
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", left: 0,
+                  zIndex: 30, background: "#fff", border: "1px solid var(--line)",
+                  borderRadius: 12, boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+                  padding: 12, minWidth: 200,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13 }}>Visible columns</strong>
+                    <button type="button" onClick={resetColumns} style={{ ...btnGhost, padding: "4px 8px", fontSize: 11 }}>Reset</button>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {ALL_COLUMNS.map((c) => (
+                      <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 6px", cursor: "pointer", borderRadius: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.has(c.id)}
+                          onChange={() => toggleColumn(c.id)}
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         <button style={{ ...btnPrimary, marginLeft: "auto" }} onClick={() => setShowNew(true)}>+ New booking</button>
       </header>
 
@@ -87,6 +303,26 @@ export function Bookings({ adminToken }: Props) {
           adminToken={adminToken}
           onClose={() => setShowNew(false)}
         />
+      )}
+
+      {mobile && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600 }}>Sort</span>
+          <select
+            value={`${sortBy}:${sortDir}`}
+            onChange={(e) => {
+              const [id, dir] = e.target.value.split(":") as [ColumnId, "asc" | "desc"];
+              setSortBy(id);
+              setSortDir(dir);
+            }}
+            style={{ ...inputStyle, fontSize: 12, padding: "6px 8px" }}
+          >
+            {ALL_COLUMNS.filter((c) => c.sortable).flatMap((c) => [
+              <option key={`${c.id}:desc`} value={`${c.id}:desc`}>{c.label} (desc)</option>,
+              <option key={`${c.id}:asc`} value={`${c.id}:asc`}>{c.label} (asc)</option>,
+            ])}
+          </select>
+        </div>
       )}
 
       {mobile ? (
@@ -107,8 +343,8 @@ export function Bookings({ adminToken }: Props) {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div>
-                    <div style={mobileLabel}>Bike</div>
-                    <div style={mobileValue}>{r.bike ? `${r.bike.name} ${r.bike.color}` : "—"}</div>
+                    <div style={mobileLabel}>Moto</div>
+                    <div style={mobileValue}>{shortBikeLabel(r.bike)}</div>
                   </div>
                   <div>
                     <div style={mobileLabel}>Dates</div>
@@ -121,6 +357,10 @@ export function Bookings({ adminToken }: Props) {
                   <div>
                     <div style={mobileLabel}>Paid</div>
                     <div style={mobileValue}>{fmtUSD(r.paid)}</div>
+                  </div>
+                  <div>
+                    <div style={mobileLabel}>Payment</div>
+                    <div style={mobileValue}>{payMethodLabel(r.payMethod)}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -156,22 +396,32 @@ export function Bookings({ adminToken }: Props) {
           <thead>
             <tr>
               <th style={{ ...thStyle, width: 32 }}></th>
-              <th style={thStyle}>Code</th>
-              <th style={thStyle}>Customer</th>
-              <th style={thStyle}>Bike</th>
-              <th style={thStyle}>Dates</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Days</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Paid</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Pay status</th>
-              <th style={thStyle}>Source</th>
+              {visibleCols.map((col) => {
+                const active = sortBy === col.id;
+                const arrow = active ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+                return (
+                  <th
+                    key={col.id}
+                    onClick={() => col.sortable && handleSort(col.id)}
+                    style={{
+                      ...thStyle,
+                      textAlign: col.align ?? "left",
+                      cursor: col.sortable ? "pointer" : "default",
+                      userSelect: "none",
+                      color: active ? "var(--ink)" : (thStyle as React.CSSProperties).color,
+                    }}
+                  >
+                    {col.label}{arrow}
+                  </th>
+                );
+              })}
               <th style={thStyle}></th>
             </tr>
           </thead>
           <tbody>
             {(bookings ?? []).map((r) => {
               const isOpen = expanded.has(r._id);
+              const colSpan = visibleCols.length + 2;
               return (
                 <React.Fragment key={r._id}>
                   <tr>
@@ -182,28 +432,18 @@ export function Bookings({ adminToken }: Props) {
                     >
                       {isOpen ? "▾" : "▸"}
                     </td>
-                    <td style={{ ...tdStyle, fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>{r.code}</td>
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 600 }}>{r.docFirstName} {r.docLastName}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.phoneCC} {r.phoneNum}</div>
-                    </td>
-                    <td style={tdStyle}>
-                      {r.bike ? `${r.bike.name} ${r.bike.color}` : "—"}
-                      {r.bike && (<div style={{ fontSize: 11, color: "var(--muted)" }}>{r.bike.plate}</div>)}
-                    </td>
-                    <td style={tdStyle}>
-                      {fmtDateShort(r.startDate)} → {fmtDateShort(r.endDate)}
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: "right" }}>{r.days}</td>
-                    <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>{fmtUSD(r.totalUSD)}</td>
-                    <td style={{ ...tdStyle, textAlign: "right" }}>{fmtUSD(r.paid)}</td>
-                    <td style={tdStyle}><StatusPill status={r.status} /></td>
-                    <td style={tdStyle}>
-                      <span style={{ cursor: "pointer" }} onClick={() => toggleExpanded(r._id)} title="Show payments">
-                        <StatusPill status={r.payStatus} />
-                      </span>
-                    </td>
-                    <td style={{ ...tdStyle, textTransform: "capitalize" }}>{(r.source ?? "—").replace("_", " ")}</td>
+                    {visibleCols.map((col) => (
+                      <td
+                        key={col.id}
+                        style={{
+                          ...tdStyle,
+                          textAlign: col.align ?? "left",
+                          ...(col.id === "source" ? { textTransform: "capitalize" } : {}),
+                        }}
+                      >
+                        {col.render(r as Booking)}
+                      </td>
+                    ))}
                     <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button style={btnGhost} onClick={() => setEditing(r._id)}>Edit</button>
@@ -213,7 +453,7 @@ export function Bookings({ adminToken }: Props) {
                   </tr>
                   {isOpen && (
                     <tr>
-                      <td colSpan={12} style={{ padding: 0, background: "#fafafa", borderBottom: "1px solid var(--line-2)" }}>
+                      <td colSpan={colSpan} style={{ padding: 0, background: "#fafafa", borderBottom: "1px solid var(--line-2)" }}>
                         <div style={{ padding: "12px 16px" }}>
                           <BookingPaymentsPanel reservationId={r._id} adminToken={adminToken} />
                         </div>
@@ -225,7 +465,7 @@ export function Bookings({ adminToken }: Props) {
             })}
             {bookings && bookings.length === 0 && (
               <tr>
-                <td colSpan={12} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)", padding: 24 }}>
+                <td colSpan={visibleCols.length + 2} style={{ ...tdStyle, textAlign: "center", color: "var(--muted)", padding: 24 }}>
                   No bookings match these filters.
                 </td>
               </tr>
