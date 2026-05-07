@@ -75,6 +75,14 @@ const ENTRIES: Entry[] = [
   // Katherine extended through 11/05/26. Source typo "11/04/26" treated as
   // "11/05/26" since extension date can't precede the original start.
   { firstName: "Katherine", lastName: "Gonzales", slug: "yamaha-xt", start: "2026-04-27", end: "2026-05-11", total: 240, method: "cash", collectedBy: "Karen", note: "Extended in-place from 04/05/26 → 11/05/26" },
+
+  // ── Third batch. ─────────────────────────────────────────────────────────
+  { firstName: "Roli", lastName: "Tailed", slug: "yamaha-xt", start: "2025-06-03", end: "2025-06-06", total: 60, method: "cash", collectedBy: "Karen" },
+  // Single-date entry — 1 day × $20 = $20.
+  { firstName: "Rotem", lastName: "Solomon", slug: "yamaha-xt", start: "2025-06-29", end: "2025-06-30", total: 20, method: "cash", collectedBy: "Karen", note: "Single-day rental" },
+  { firstName: "Madeline", lastName: "Hatrick", slug: "genesis-red", start: "2025-10-05", end: "2025-10-19", total: 180, method: "cash", collectedBy: "Karen" },
+  // Cross-year rental.
+  { firstName: "Yael", lastName: "Tenanboin", slug: "genesis-blue", start: "2025-12-28", end: "2026-01-02", total: 100, method: "cash", collectedBy: "Karen" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
