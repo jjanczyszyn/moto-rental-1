@@ -92,6 +92,7 @@ const ENTRIES: Entry[] = [
 
   { firstName: "Johannes", lastName: "Scherer", slug: "genesis-blue", start: "2026-05-02", end: "2026-05-05", total: 60, method: "cash", collectedBy: "Karen" },
   { firstName: "Angel", lastName: "Z", slug: "genesis-red", start: "2026-05-03", end: "2026-05-05", total: 40, method: "cash", collectedBy: "Karen" },
+  { firstName: "Francois", lastName: "Corentin", slug: "yamaha-xt", start: "2026-01-17", end: "2026-01-24", total: 120, method: "cash", collectedBy: "Karen" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
