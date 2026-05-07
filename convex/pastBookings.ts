@@ -122,6 +122,27 @@ function genCode(): string {
   return `KJ-${pick(4)}-${Math.floor(Math.random() * 900 + 100)}`;
 }
 
+// One-off cleanup. Updates the totalUSD of a reservation by code. Used
+// when the manager corrects a price after the booking already exists.
+export const setTotalByCode = mutation({
+  args: { code: v.string(), totalUSD: v.number() },
+  handler: async (ctx, { code, totalUSD }) => {
+    const reservation = await ctx.db
+      .query("reservations")
+      .withIndex("by_code", (q) => q.eq("code", code))
+      .first();
+    if (!reservation) return { updated: false, reason: "Not found" };
+    await ctx.db.patch(reservation._id, { totalUSD, updatedAt: Date.now() });
+    return {
+      updated: true,
+      code,
+      name: `${reservation.docFirstName} ${reservation.docLastName}`.trim(),
+      from: reservation.totalUSD,
+      to: totalUSD,
+    };
+  },
+});
+
 // One-off cleanup. Deletes a reservation by code along with any payments
 // it owns. Used to remove a duplicate that the original importer created
 // before we tightened the idempotency check.
