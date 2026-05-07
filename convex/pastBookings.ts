@@ -49,6 +49,32 @@ const ENTRIES: Entry[] = [
   { firstName: "Melanie", lastName: "Velasquez", slug: "genesis-red", start: "2025-11-12", end: "2025-11-14", total: 40, method: "cash", collectedBy: "Karen" },
   { firstName: "Jonathan", lastName: "Cahill", slug: "yamaha-xt", start: "2025-11-17", end: "2025-11-23", total: 80, method: "cash", collectedBy: "Karen" },
   { firstName: "Jana", lastName: "Schilling", slug: "yamaha-xt", start: "2025-12-22", end: "2025-12-29", total: 120, method: "cash", collectedBy: "Karen" },
+
+  // ── Second batch (notebook entries spanning Jun 2025 → Apr 2026). ────────
+  { firstName: "John", lastName: "Lloyd", slug: "yamaha-xt", start: "2025-06-21", end: "2025-06-23", total: 60, method: "cash", collectedBy: "Karen" },
+  { firstName: "Enrique", lastName: "Zolnatho", slug: "yamaha-xt", start: "2025-08-25", end: "2025-08-27", total: 40, method: "cash", collectedBy: "Karen" },
+  // Source said 12/09/26-26/09/25 — first year a typo, both 2025.
+  { firstName: "Lodwin", lastName: "Schlegel", slug: "yamaha-xt", start: "2025-09-12", end: "2025-09-26", total: 120, method: "cash", collectedBy: "Karen" },
+  { firstName: "Paris", lastName: "D", slug: "genesis-blue", start: "2025-10-11", end: "2025-10-17", total: 100, method: "cash", collectedBy: "Karen" },
+  { firstName: "Clement", lastName: "Couzin", slug: "genesis-red", start: "2025-11-18", end: "2025-11-21", total: 54, method: "cash", collectedBy: "Karen" },
+  // Source said 8/02/26-7/02/26 (end before start). 19 days × $20 = $380 →
+  // end inferred as 27/02/26.
+  { firstName: "Philippe", lastName: "Cardigan", slug: "yamaha-xt", start: "2026-02-08", end: "2026-02-27", total: 380, method: "cash", collectedBy: "Karen", note: "End date inferred from amount (19 days × $20)" },
+  { firstName: "Lex", lastName: "Heinem", slug: "genesis-red", start: "2026-02-21", end: "2026-02-28", total: 120, method: "cash", collectedBy: "Karen" },
+  { firstName: "Woodson", lastName: "Hunters", slug: "yamaha-xt", start: "2026-03-07", end: "2026-03-12", total: 100, method: "cash", collectedBy: "Karen" },
+  { firstName: "Andrea", lastName: "Hacnsi", slug: "genesis-red", start: "2026-03-14", end: "2026-03-16", total: 40, method: "cash", collectedBy: "Karen" },
+  { firstName: "Leam", lastName: "", slug: "genesis-red", start: "2026-03-17", end: "2026-03-19", total: 40, method: "cash", collectedBy: "Karen" },
+  { firstName: "Katherine", lastName: "Gonzales", slug: "yamaha-xt", start: "2026-03-18", end: "2026-03-25", total: 120, method: "cash", collectedBy: "Karen" },
+  { firstName: "Dino", lastName: "Molina", slug: "yamaha-xt", start: "2026-04-11", end: "2026-04-15", total: 80, method: "cash", collectedBy: "Karen" },
+  { firstName: "Serjiv", lastName: "Menahem", slug: "genesis-blue", start: "2026-04-13", end: "2026-04-18", total: 100, method: "cash", collectedBy: "Karen" },
+  // Source said 21/04/2026 only — end inferred from $100 = 5 days × $20.
+  { firstName: "Segui", lastName: "Abraham", slug: "genesis-red", start: "2026-04-21", end: "2026-04-26", total: 100, method: "cash", collectedBy: "Karen", note: "End date inferred from amount (5 days × $20)" },
+  // Source said 23/04/26-23/04/26 (zero-day) — end inferred from $60 = 3
+  // days × $20.
+  { firstName: "Ethan", lastName: "", slug: "genesis-blue", start: "2026-04-23", end: "2026-04-26", total: 60, method: "cash", collectedBy: "Karen", note: "End date inferred from amount (3 days × $20)" },
+  // Katherine extended through 11/05/26. Source typo "11/04/26" treated as
+  // "11/05/26" since extension date can't precede the original start.
+  { firstName: "Katherine", lastName: "Gonzales", slug: "yamaha-xt", start: "2026-04-27", end: "2026-05-11", total: 240, method: "cash", collectedBy: "Karen", note: "Extended in-place from 04/05/26 → 11/05/26" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
