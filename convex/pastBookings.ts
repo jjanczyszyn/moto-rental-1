@@ -4,6 +4,7 @@
 // re-running skips any reservation matching name+start+bike that already
 // exists.
 
+import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 
 type Collector = "JJ" | "Karen";
@@ -95,6 +96,32 @@ function genCode(): string {
   return `KJ-${pick(4)}-${Math.floor(Math.random() * 900 + 100)}`;
 }
 
+// One-off cleanup. Deletes a reservation by code along with any payments
+// it owns. Used to remove a duplicate that the original importer created
+// before we tightened the idempotency check.
+export const deleteByCode = mutation({
+  args: { code: v.string() },
+  handler: async (ctx, { code }) => {
+    const reservation = await ctx.db
+      .query("reservations")
+      .withIndex("by_code", (q) => q.eq("code", code))
+      .first();
+    if (!reservation) return { deleted: false, reason: "Not found" };
+    const payments = await ctx.db
+      .query("payments")
+      .withIndex("by_reservation", (q) => q.eq("reservationId", reservation._id))
+      .collect();
+    for (const p of payments) await ctx.db.delete(p._id);
+    await ctx.db.delete(reservation._id);
+    return {
+      deleted: true,
+      code,
+      name: `${reservation.docFirstName} ${reservation.docLastName}`,
+      paymentsDeleted: payments.length,
+    };
+  },
+});
+
 export const importHistorical = mutation({
   args: {},
   handler: async (ctx) => {
@@ -115,17 +142,21 @@ export const importHistorical = mutation({
         continue;
       }
 
-      // Idempotency: name+start+bike uniquely identifies an imported booking.
+      // Idempotency. Two different customers booking the same bike on the
+      // exact same start date is essentially never going to happen, so we
+      // dedupe on (firstName, startDate, bikeId). lastName is excluded
+      // because the customer-flow stores the full passport name (e.g.
+      // "Isabel Tellez Gonzales") which won't match a notebook shorthand
+      // like "Gonzales".
       const all = await ctx.db.query("reservations").collect();
       const dup = all.find(
         (r) =>
-          r.docFirstName === e.firstName &&
-          r.docLastName === e.lastName &&
           r.startDate === e.start &&
-          r.bikeId === bike._id
+          r.bikeId === bike._id &&
+          r.docFirstName.toLowerCase() === e.firstName.toLowerCase()
       );
       if (dup) {
-        skipped.push(`${e.firstName} ${e.lastName} ${e.start} → already exists (${dup.code})`);
+        skipped.push(`${e.firstName} ${e.lastName} ${e.start} → already exists (${dup.code} · ${dup.docFirstName} ${dup.docLastName})`);
         continue;
       }
 
