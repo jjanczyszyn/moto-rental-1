@@ -106,6 +106,10 @@ const ENTRIES: Entry[] = [
   // Vojieten · Yamaha · 11/04/25 → 17/05/25 · $350 via PayPal to JJ.
   // 36-day rental at a special rate (auto-pricing would be ~$540).
   { firstName: "Vojieten", lastName: "Ksvarik", slug: "yamaha-xt", start: "2025-04-11", end: "2025-05-17", total: 350, method: "paypal", collectedBy: "JJ", note: "$350 PayPal upfront for 36-day rental (special rate)." },
+
+  // Serjiv Menahem's earlier rental — Genesis Roja, 28 marzo → 6 abril 2026,
+  // $170 (9 days; $10 discount off the $180 face price).
+  { firstName: "Serjiv", lastName: "Menahem", slug: "genesis-red", start: "2026-03-28", end: "2026-04-06", total: 170, method: "cash", collectedBy: "Karen" },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
