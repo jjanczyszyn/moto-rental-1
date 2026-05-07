@@ -103,10 +103,9 @@ const ENTRIES: Entry[] = [
   // Roli Tailed (spelled "Tailer" in this entry — same customer as the
   // earlier 03/06/25 booking; using the prior spelling for consistency).
   { firstName: "Roli", lastName: "Tailed", slug: "yamaha-xt", start: "2025-05-25", end: "2025-05-28", total: 60, method: "cash", collectedBy: "Karen" },
-  // Vojieten · Yamaha · 11/05/26 → 17/05/26 (start year was "22" in source;
-  // assumed typo for "26"). Paid $350 via PayPal to JJ. Booking is upcoming
-  // as of today, so status="confirmed" rather than "returned".
-  { firstName: "Vojieten", lastName: "Ksvarik", slug: "yamaha-xt", start: "2026-05-11", end: "2026-05-17", total: 350, method: "paypal", collectedBy: "JJ", status: "confirmed", note: "Source said start 11/05/22 — assumed typo for 11/05/26. $350 PayPal upfront (special rate)." },
+  // Vojieten · Yamaha · 11/04/25 → 17/05/25 · $350 via PayPal to JJ.
+  // 36-day rental at a special rate (auto-pricing would be ~$540).
+  { firstName: "Vojieten", lastName: "Ksvarik", slug: "yamaha-xt", start: "2025-04-11", end: "2025-05-17", total: 350, method: "paypal", collectedBy: "JJ", note: "$350 PayPal upfront for 36-day rental (special rate)." },
 ];
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
