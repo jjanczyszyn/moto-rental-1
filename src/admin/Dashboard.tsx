@@ -45,7 +45,7 @@ export function Dashboard({ year, monthIdx0, setYear, setMonth }: Props) {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 12 }}>
         <StatCard label="Revenue" value={fmtUSD0(dash?.revenue ?? 0)}
           sub={dash ? `${fmtUSD(trailingTotal)} trailing 6 mo` : "Loading…"} />
         <StatCard label="Rentals" value={dash?.rentalCount ?? 0}
@@ -56,7 +56,7 @@ export function Dashboard({ year, monthIdx0, setYear, setMonth }: Props) {
           sub={dash?.rentalDaysSold ? `${dash.rentalDaysSold} days @ avg` : "No rentals"} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 12 }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600 }}>Top motorcycle</div>
           {dash?.topBike ? (

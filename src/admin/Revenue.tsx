@@ -28,7 +28,7 @@ export function Revenue({ year, setYear }: Props) {
         </select>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 12 }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600 }}>YTD revenue</div>
           <div style={{ fontSize: 26, fontWeight: 700 }}>{fmtUSD0(ytdRevenue)}</div>

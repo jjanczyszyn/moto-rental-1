@@ -642,10 +642,10 @@ function EditBookingForm({
           <strong>Edit booking {r.code}</strong>
           <button style={btnGhost} onClick={onClose}>Close</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 10 }}>
           <Field label="Customer name"><input value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Phone (+CC)"><input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Email"><input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Phone (+CC)"><input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" style={inputStyle} /></Field>
+          <Field label="Email"><input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" style={inputStyle} /></Field>
           <Field label="Start"><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={inputStyle} /></Field>
           <Field label="End"><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={inputStyle} /></Field>
           <Field label="Source">
@@ -654,7 +654,7 @@ function EditBookingForm({
               {SOURCE_OPTIONS.map((s) => (<option key={s} value={s}>{s.replace("_", " ")}</option>))}
             </select>
           </Field>
-          <Field label="Discount (USD)"><input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Discount (USD)"><input type="number" inputMode="decimal" value={discount} onChange={(e) => setDiscount(e.target.value)} style={inputStyle} /></Field>
           <Field label="Notes"><input value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} /></Field>
         </div>
         {err && <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>{err}</div>}

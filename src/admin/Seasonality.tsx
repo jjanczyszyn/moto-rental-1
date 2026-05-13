@@ -31,8 +31,8 @@ export function Seasonality({ year, setYear }: Props) {
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Monthly demand heatmap</div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ ...tableStyle, minWidth: 720 }}>
+        <div style={{ overflowX: "auto", margin: "0 -16px", padding: "0 16px", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ ...tableStyle, minWidth: 640 }}>
             <thead>
               <tr>
                 <th style={thStyle}>Motorcycle</th>
@@ -68,7 +68,7 @@ export function Seasonality({ year, setYear }: Props) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 12 }}>
         <div style={tableWrap}>
           <div style={{ padding: "10px 12px", background: "#fafafa", borderBottom: "1px solid var(--line)", fontWeight: 600, fontSize: 13 }}>Best months</div>
           <table style={tableStyle}>

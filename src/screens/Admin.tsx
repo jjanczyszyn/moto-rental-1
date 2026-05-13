@@ -60,6 +60,99 @@ function useAdminAuth() {
   return { authed, token, tryPassword, logout, session };
 }
 
+// Detects whether the page is already running as an installed PWA, so we
+// don't pester users to install something they already installed.
+function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  const iOS = (window.navigator as { standalone?: boolean }).standalone;
+  return !!iOS || window.matchMedia("(display-mode: standalone)").matches;
+}
+
+const INSTALL_DISMISSED_KEY = "kj-install-dismissed";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+function InstallHint() {
+  const [deferred, setDeferred] = React.useState<BeforeInstallPromptEvent | null>(null);
+  const [dismissed, setDismissed] = React.useState<boolean>(() =>
+    typeof window !== "undefined" && localStorage.getItem(INSTALL_DISMISSED_KEY) === "1"
+  );
+  const [standalone, setStandalone] = React.useState(isStandalone);
+
+  React.useEffect(() => {
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferred(e as BeforeInstallPromptEvent);
+    };
+    const onAppInstalled = () => setStandalone(true);
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  if (standalone || dismissed) return null;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
+  // Only show on iOS Safari or when we have a real beforeinstallprompt event
+  // — otherwise (e.g. desktop Firefox) the user can't actually install.
+  if (!isIOS && !deferred) return null;
+
+  const dismiss = () => {
+    localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
+    setDismissed(true);
+  };
+
+  const install = async () => {
+    if (!deferred) return;
+    await deferred.prompt();
+    const choice = await deferred.userChoice;
+    setDeferred(null);
+    if (choice.outcome === "dismissed") dismiss();
+  };
+
+  return (
+    <div style={{
+      maxWidth: 360, margin: "16px auto 0", padding: 14,
+      border: "1px solid var(--line)", borderRadius: 12, background: "#fff8f6",
+      fontSize: 13, color: "var(--ink-2)", lineHeight: 1.4,
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <strong style={{ color: "var(--ink)" }}>Install this as an app</strong>
+        <button
+          onClick={dismiss}
+          aria-label="Dismiss"
+          style={{
+            border: "none", background: "transparent", color: "var(--muted)",
+            cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 0,
+          }}
+        >×</button>
+      </div>
+      {deferred ? (
+        <>
+          <div style={{ marginTop: 6 }}>
+            Add Karen & JJ Moto to your home screen for an app-style icon and full-screen experience.
+          </div>
+          <button onClick={install} style={{
+            marginTop: 10, padding: "8px 12px", borderRadius: 8, border: "none",
+            background: "var(--accent)", color: "var(--accent-ink)",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>Install app</button>
+        </>
+      ) : (
+        <div style={{ marginTop: 6 }}>
+          In Safari, tap the <strong>Share</strong> icon, then <strong>Add to Home Screen</strong>.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LoginGate({
   onSubmit,
 }: {
@@ -179,6 +272,7 @@ export function AdminScreen() {
         WebkitOverflowScrolling: "touch", background: "#fff",
       }}>
         <LoginGate onSubmit={tryPassword} />
+        <InstallHint />
       </div>
     );
   }
@@ -217,7 +311,7 @@ export function AdminScreen() {
       overflowX: "hidden",
       WebkitOverflowScrolling: "touch",
       background: "#fafafa",
-      paddingBottom: 60,
+      paddingBottom: "calc(60px + env(safe-area-inset-bottom, 0px))",
     }}>
       <header style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",

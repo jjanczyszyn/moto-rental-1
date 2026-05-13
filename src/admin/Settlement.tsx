@@ -39,7 +39,7 @@ export function Settlement({ adminToken, year, monthIdx0, setYear, setMonth }: P
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 12 }}>
         <StatCard label="Total received" value={fmtUSD0(summary?.totalRevenue ?? 0)} />
         <StatCard label="JJ expected (70%)" value={fmtUSD(summary?.jjExpected ?? 0)}
           sub={`Collected ${fmtUSD(summary?.jjCollected ?? 0)}`} />
@@ -53,6 +53,7 @@ export function Settlement({ adminToken, year, monthIdx0, setYear, setMonth }: P
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>By payment method · {monthLabelLong[monthIdx0]} {year}</div>
+        <div style={{ overflowX: "auto", margin: "0 -16px", padding: "0 16px", WebkitOverflowScrolling: "touch" }}>
         <table style={tableStyle}>
           <thead>
             <tr>
@@ -78,9 +79,10 @@ export function Settlement({ adminToken, year, monthIdx0, setYear, setMonth }: P
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>Transfers ({monthLabelLong[monthIdx0]} {year})</div>
         <button style={btnPrimary} onClick={() => setShowTransfer(true)}>+ Record settlement transfer</button>
       </div>
@@ -128,6 +130,7 @@ export function Settlement({ adminToken, year, monthIdx0, setYear, setMonth }: P
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Year-to-date · {year}</div>
+        <div style={{ overflowX: "auto", margin: "0 -16px", padding: "0 16px", WebkitOverflowScrolling: "touch" }}>
         <table style={tableStyle}>
           <thead>
             <tr>
@@ -157,6 +160,7 @@ export function Settlement({ adminToken, year, monthIdx0, setYear, setMonth }: P
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -205,7 +209,7 @@ function RecordTransferModal({
           <strong>Record settlement transfer</strong>
           <button style={btnGhost} onClick={onClose}>Close</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))", gap: 10 }}>
           <Field label="From">
             <select value={from} onChange={(e) => setFrom(e.target.value as any)} style={inputStyle}>
               {PARTNERS.map((p) => (<option key={p} value={p}>{p}</option>))}
@@ -217,7 +221,7 @@ function RecordTransferModal({
             </select>
           </Field>
           <Field label="Amount (USD)">
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+            <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
           </Field>
           <Field label="Date">
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />

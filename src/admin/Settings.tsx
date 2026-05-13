@@ -70,16 +70,16 @@ export function Settings({ adminToken }: Props) {
 
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Business</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 10 }}>
           <Field label="Business name"><input value={businessName} onChange={(e) => setBusinessName(e.target.value)} style={inputStyle} /></Field>
           <Field label="Currency"><input value={currency} onChange={(e) => setCurrency(e.target.value)} style={inputStyle} /></Field>
           <Field label="Timezone"><input value={timezone} onChange={(e) => setTimezone(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Daily rate"><input type="number" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Weekly rate"><input type="number" value={weeklyRate} onChange={(e) => setWeeklyRate(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Monthly rate"><input type="number" value={monthlyRate} onChange={(e) => setMonthlyRate(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Deposit"><input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} style={inputStyle} /></Field>
-          <Field label="JJ share %"><input type="number" value={jjShare} onChange={(e) => setJjShare(e.target.value)} style={inputStyle} /></Field>
-          <Field label="Karen share %"><input type="number" value={karenShare} onChange={(e) => setKarenShare(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Daily rate"><input type="number" inputMode="decimal" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Weekly rate"><input type="number" inputMode="decimal" value={weeklyRate} onChange={(e) => setWeeklyRate(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Monthly rate"><input type="number" inputMode="decimal" value={monthlyRate} onChange={(e) => setMonthlyRate(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Deposit"><input type="number" inputMode="decimal" value={deposit} onChange={(e) => setDeposit(e.target.value)} style={inputStyle} /></Field>
+          <Field label="JJ share %"><input type="number" inputMode="decimal" value={jjShare} onChange={(e) => setJjShare(e.target.value)} style={inputStyle} /></Field>
+          <Field label="Karen share %"><input type="number" inputMode="decimal" value={karenShare} onChange={(e) => setKarenShare(e.target.value)} style={inputStyle} /></Field>
         </div>
         {msg && <div style={{ color: "#065f46", fontSize: 12, marginTop: 8 }}>{msg}</div>}
         {err && <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 8 }}>{err}</div>}

@@ -15,3 +15,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </ConvexProvider>
   </React.StrictMode>
 );
+
+// PWA service worker. Registered after window load so it doesn't compete
+// with the initial paint. Skipped under `vite dev` since the SW is served
+// from /public/ only in builds.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .catch((err) => console.warn("SW register failed:", err));
+  });
+}

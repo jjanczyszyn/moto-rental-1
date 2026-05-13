@@ -23,7 +23,7 @@ export function Motorcycles({ adminToken }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <h2 style={{ margin: 0, fontSize: 22 }}>Motorcycles</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 12 }}>
         {bikes.map((b) => {
           const bikeAvail = (availability ?? []).filter((a) => a.bikeId === b._id);
           const status = b.status ?? (b.isActive ? "active" : "inactive");
@@ -51,6 +51,7 @@ export function Motorcycles({ adminToken }: Props) {
                   <span style={labelStyle}>Daily rate</span>
                   <input
                     type="number"
+                    inputMode="decimal"
                     placeholder={String(cfg?.dailyRate ?? 20)}
                     defaultValue={b.dailyRate ?? ""}
                     onBlur={(e) => {
@@ -131,7 +132,7 @@ function MaintenanceBlock({
   return (
     <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line-2)" }}>
       <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600 }}>Maintenance / blocked days</div>
-      <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr)) auto", gap: 6 }}>
+      <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 110px), 1fr))", gap: 6 }}>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
         <select value={status} onChange={(e) => setStatus(e.target.value as any)} style={inputStyle}>
@@ -139,7 +140,7 @@ function MaintenanceBlock({
           <option value="blocked">blocked</option>
         </select>
         <input placeholder="notes" value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} />
-        <button style={btnPrimary} onClick={submit} disabled={busy}>Add</button>
+        <button style={{ ...btnPrimary, gridColumn: "1 / -1" }} onClick={submit} disabled={busy}>Add</button>
       </div>
       {grouped.length > 0 && (
         <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", fontSize: 12 }}>

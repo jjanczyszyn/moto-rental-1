@@ -50,7 +50,7 @@ export function Payments({ adminToken, year, monthIdx0, setYear, setMonth }: Pro
       <div style={cardStyle}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Payment method summary</div>
         <div style={{ overflowX: "auto", margin: "0 -16px", padding: "0 16px" }}>
-          <table style={{ ...tableStyle, minWidth: mobile ? 600 : undefined }}>
+          <table style={tableStyle}>
             <thead>
               <tr>
                 <th style={thStyle}>Method</th>
@@ -295,9 +295,9 @@ export function RecordPaymentModal({
         <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
           {r.docFirstName} {r.docLastName} · {fmtUSD(r.totalUSD)} total · {r.days} days
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))", gap: 10 }}>
           <Field label="Amount (USD)">
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+            <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
           </Field>
           <Field label="Method">
             <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
@@ -417,9 +417,9 @@ export function EditPaymentModal({
             {r.docFirstName} {r.docLastName} · {fmtUSD(r.totalUSD)} total · {r.days} days
           </div>
         )}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))", gap: 10 }}>
           <Field label="Amount (USD)">
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+            <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
           </Field>
           <Field label="Method">
             <select value={method} onChange={(e) => setMethod(e.target.value)} style={inputStyle}>
